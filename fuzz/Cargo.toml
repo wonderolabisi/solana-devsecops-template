@@ -1,21 +1,12 @@
 [package]
 name = "hello-anchor-fuzz"
 version = "0.0.0"
-publish = false
 edition = "2021"
-
-[package.metadata]
-cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-
-[dependencies.hello-anchor]
-path = ".."
+hello-anchor = { path = "../programs/hello-anchor" }
 
 [[bin]]
-name = "fuzz_target_1"
-path = "fuzz_targets/fuzz_target_1.rs"
-test = false
-doc = false
-bench = false
+name = "math"
+path = "fuzz_targets/math.rs"
