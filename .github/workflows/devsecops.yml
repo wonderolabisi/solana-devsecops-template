@@ -15,14 +15,11 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source "$HOME/.cargo/env"
           rustup component add clippy rustfmt
-          cargo install cargo-audit --locked
+          cargo install cargo-audit
           cargo install --git https://github.com/coral-xyz/anchor avm --locked
           avm install latest
           avm use latest
           anchor --version
-
-      - name: Install jq
-        run: sudo apt install jq -y
 
       - name: Install Trivy for Docker scanning
         run: |
@@ -35,20 +32,25 @@ jobs:
         run: |
           cargo audit --json | jq -e '.vulnerabilities.list[] | select(.advisory.severity | test("(Medium|High|Critical)"))' || echo "No medium+ vulnerabilities"
 
-      - name: Run TruffleHog
+      - name: Run TruffleHog (optional, can remove if not working)
         uses: trufflesecurity/trufflehog@main
         with:
           scanArguments: --source . --only-verified
 
       - name: Lint with Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          cd programs/hello-anchor
+          cargo clippy --all-targets --all-features -- -D warnings
 
       - name: Check Format
-        run: cargo fmt --all -- --check
+        run: |
+          cd programs/hello-anchor
+          cargo fmt --all -- --check
 
       - name: Anchor Build & Test
         run: |
           source "$HOME/.cargo/env"
+          cd programs/hello-anchor
           anchor build
           anchor test || echo "No tests defined"
 
@@ -62,8 +64,7 @@ jobs:
           fi
 
       - name: Docker Build
-        run: |
-          docker build -t anchor-secure .
+        run: docker build -t anchor-secure .
 
       - name: Trivy Docker Image Scan
         run: trivy image --severity MEDIUM,HIGH,CRITICAL anchor-secure || true
