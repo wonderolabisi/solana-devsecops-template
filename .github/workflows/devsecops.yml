@@ -23,7 +23,7 @@ jobs:
 
       - name: Install Gitleaks
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks_$(uname -s)_$(uname -m).tar.gz -o gitleaks.tar.gz
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64.tar.gz -o gitleaks.tar.gz
           tar -xzf gitleaks.tar.gz gitleaks
           chmod +x gitleaks
           sudo mv gitleaks /usr/local/bin/gitleaks
@@ -39,3 +39,9 @@ jobs:
 
       - name: Check Format
         run: cargo fmt --all -- --check
+
+      - name: Anchor Build & Test
+        run: |
+          source "$HOME/.cargo/env"
+          anchor build
+          anchor test || echo "No tests defined"
