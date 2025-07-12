@@ -10,42 +10,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Rust, Anchor, Cargo Tools
+      - name: Install Rust & Anchor CLI v0.31.1
         run: |
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          echo "source $HOME/.cargo/env" >> $GITHUB_ENV
           source "$HOME/.cargo/env"
           rustup component add clippy rustfmt
           cargo install cargo-audit
           cargo install --git https://github.com/coral-xyz/anchor avm --locked
-          avm install latest
-          avm use latest
+          avm install 0.31.1
+          avm use 0.31.1
           anchor --version
 
       - name: Install Trivy for Docker scanning
         run: |
-          sudo apt-get update
-          sudo apt-get install wget apt-transport-https gnupg lsb-release jq -y
+          sudo apt-get install wget apt-transport-https gnupg lsb-release -y
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install trivy -y
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install trivy -y
 
-      - name: Run Cargo Audit (Medium+ vulnerabilities)
+      - name: Run Cargo Audit (medium+ only)
         run: |
           source "$HOME/.cargo/env"
           cargo audit --json | jq -e '.vulnerabilities.list[] | select(.advisory.severity | test("(Medium|High|Critical)"))' || echo "No medium+ vulnerabilities"
 
-      - name: Run TruffleHog for secrets scanning
+      - name: Run TruffleHog
         uses: trufflesecurity/trufflehog@main
         with:
           scanArguments: --source . --only-verified
 
-      - name: Lint with Anchor Clippy
+      - name: Lint with Clippy
         run: |
           source "$HOME/.cargo/env"
-          anchor clippy || echo "Anchor clippy completed with warnings"
+          cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Check Rust Format
+      - name: Check Format
         run: |
           source "$HOME/.cargo/env"
           cargo fmt --all -- --check
@@ -56,7 +55,7 @@ jobs:
           anchor build
           anchor test || echo "No tests defined"
 
-      - name: Run Fuzz Tests (if available)
+      - name: Run Fuzz Tests (if exists)
         run: |
           source "$HOME/.cargo/env"
           if [ -d "fuzz" ]; then
