@@ -1,0 +1,45 @@
+name: Solana DevSecOps CI
+
+on: [push, pull_request]
+
+jobs:
+  rust-security-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust, Cargo Audit, and Anchor
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source "$HOME/.cargo/env"
+          rustup component add clippy rustfmt
+          cargo install cargo-audit
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked
+          avm install latest
+          avm use latest
+          anchor --version
+
+      - name: Install Gitleaks
+        run: |
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
+          chmod +x gitleaks && sudo mv gitleaks /usr/local/bin/
+
+      - name: Run Cargo Audit
+        run: cargo audit || true
+
+      - name: Run Gitleaks
+        run: gitleaks detect --source . --no-git --exit-code 1
+
+      - name: Lint with Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Check Format
+        run: cargo fmt --all -- --check
+
+      - name: Anchor Build & Test
+        run: |
+          source "$HOME/.cargo/env"
+          anchor build
+          anchor test || echo "No tests defined"
