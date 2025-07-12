@@ -15,11 +15,14 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
           source "$HOME/.cargo/env"
           rustup component add clippy rustfmt
-          cargo install cargo-audit
+          cargo install cargo-audit --locked
           cargo install --git https://github.com/coral-xyz/anchor avm --locked
           avm install latest
           avm use latest
           anchor --version
+
+      - name: Install jq
+        run: sudo apt install jq -y
 
       - name: Install Trivy for Docker scanning
         run: |
@@ -32,12 +35,10 @@ jobs:
         run: |
           cargo audit --json | jq -e '.vulnerabilities.list[] | select(.advisory.severity | test("(Medium|High|Critical)"))' || echo "No medium+ vulnerabilities"
 
-      - name: Secret Scan with TruffleHog
-        uses: trufflesecurity/trufflehog@v3.66.4
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
         with:
-          path: .
-          base: HEAD~10
-          head: HEAD
+          scanArguments: --source . --only-verified
 
       - name: Lint with Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
