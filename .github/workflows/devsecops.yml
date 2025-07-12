@@ -21,10 +21,9 @@ jobs:
           avm use latest
           anchor --version
 
-      - name: Install Gitleaks
+        - name: Install Gitleaks
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64 -o gitleaks
-          chmod +x gitleaks && sudo mv gitleaks /usr/local/bin/
+          curl -sSL https://github.com/gitleaks/gitleaks/releas>          chmod +x gitleaks && sudo mv gitleaks /usr/local/bin/
 
       - name: Run Cargo Audit
         run: cargo audit || true
