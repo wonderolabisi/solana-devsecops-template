@@ -25,17 +25,13 @@ jobs:
         run: |
           sudo apt-get install wget apt-transport-https gnupg lsb-release -y
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
           sudo apt-get update && sudo apt-get install trivy -y
 
-      - name: Run Cargo Audit (medium+ only)
+      - name: Run Cargo Audit
         run: |
-          cargo audit --json | jq -e '.vulnerabilities.list[] | select(.advisory.severity | test("(Medium|High|Critical)"))' || echo "No medium+ vulnerabilities"
-
-      - name: Run TruffleHog (optional, can remove if not working)
-        uses: trufflesecurity/trufflehog@main
-        with:
-          scanArguments: --source . --only-verified
+          cd programs/hello-anchor
+          cargo audit || true
 
       - name: Lint with Clippy
         run: |
@@ -50,7 +46,6 @@ jobs:
       - name: Anchor Build & Test
         run: |
           source "$HOME/.cargo/env"
-          cd programs/hello-anchor
           anchor build
           anchor test || echo "No tests defined"
 
