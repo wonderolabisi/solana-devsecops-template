@@ -21,9 +21,12 @@ jobs:
           avm use latest
           anchor --version
 
-        - name: Install Gitleaks
+      - name: Install Gitleaks
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releas>          chmod +x gitleaks && sudo mv gitleaks /usr/local/bin/
+          curl -sSL https://github.com/gitleaks/gitleaks/releases/latest/download/gitleaks-linux-amd64.tar.gz -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz
+          chmod +x gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
 
       - name: Run Cargo Audit
         run: cargo audit || true
@@ -42,3 +45,4 @@ jobs:
           source "$HOME/.cargo/env"
           anchor build
           anchor test || echo "No tests defined"
+
