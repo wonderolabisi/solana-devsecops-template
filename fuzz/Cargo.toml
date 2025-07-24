@@ -1,0 +1,12 @@
+[package]
+name = "hello-anchor-fuzz"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+libfuzzer-sys = "0.4"
+hello-anchor = { path = "../programs/hello-anchor" }
+
+[[bin]]
+name = "math"
+path = "fuzz_targets/math.rs"

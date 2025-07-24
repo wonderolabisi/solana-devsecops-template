@@ -1,9 +1,9 @@
 {
   "name": "web3-devsecops-audit-template",
   "version": "1.0.0",
-  "description": "Professional bug bounty hunting pipeline",
+  "description": "Professional bug bounty hunting pipeline for Solana and Ethereum",
   "scripts": {
-    "test": "hardhat test",
+    "test": "hardhat test && anchor test",
     "compile": "hardhat compile",
     "analyze": "npm run slither && npm run mythril",
     "slither": "slither .",
@@ -11,7 +11,12 @@
     "exploit-test": "hardhat test exploits/test_exploits.js",
     "bounty-hunt": "gh workflow run devsecops.yml",
     "generate-exploits": "gh workflow run exploit-generation.yml",
-    "monitor-platforms": "gh workflow run monitoring.yml"
+    "monitor-platforms": "gh workflow run monitoring.yml",
+    "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.29.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
@@ -21,12 +26,14 @@
     "@nomicfoundation/hardhat-verify": "^2.0.0",
     "@typechain/hardhat": "^9.0.0",
     "@typechain/ethers-v6": "^0.5.0",
-    "chai": "^4.2.0",
+    "chai": "^4.3.4",
     "ethers": "^6.4.0",
     "hardhat": "^2.19.0",
     "hardhat-gas-reporter": "^1.0.8",
     "solidity-coverage": "^0.8.1",
-    "typechain": "^8.3.0"
+    "typechain": "^8.3.0",
+    "mocha": "^9.0.3",
+    "prettier": "^2.6.2"
   },
   "keywords": [
     "bug-bounty",
@@ -34,7 +41,9 @@
     "security",
     "devsecops",
     "ethereum",
-    "solidity"
+    "solana",
+    "anchor",
+    "rust"
   ],
   "author": "Bug Bounty Hunter",
   "license": "MIT"

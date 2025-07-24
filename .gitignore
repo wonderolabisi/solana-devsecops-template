@@ -1,1 +1,26 @@
+# Dependencies
 node_modules
+.yarn
+
+# Build outputs
+target
+**/*.rs.bk
+.anchor
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+
+# Test artifacts
+test-ledger
+
+# Reports
+reports/
+*.log
+
+# IDE files
+.vscode/settings.json
+.idea/

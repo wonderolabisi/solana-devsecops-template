@@ -1,0 +1,11 @@
+[package]
+name = "hello-anchor"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "hello_anchor"
+path = "src/lib.rs"
+
+[dependencies]
+anchor-lang = "0.29.0"
