@@ -29,13 +29,6 @@ jobs:
         node-version: '18'
         cache: 'npm'
 
-    - name: Setup Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: bpf-unknown-unknown
-        override: true
-
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -45,6 +38,19 @@ jobs:
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
         echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+
+    - name: Setup Rust for Solana
+      run: |
+        # Install standard Rust first
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        source ~/.cargo/env
+        
+        # Add Solana's BPF target via Solana CLI (which provides the custom toolchain)
+        solana install init
+        
+        # Verify Rust and target availability
+        rustc --version
+        rustup target list --installed
 
     - name: Install Anchor CLI
       run: |
@@ -69,9 +75,18 @@ jobs:
     - name: Verify Installations
       run: |
         echo "🔧 Verifying tool installations..."
+        
+        # Source cargo environment
+        source ~/.cargo/env
+        
+        # Check versions
         solana --version || echo "Solana not available"
         anchor --version || echo "Anchor not available"
         rustc --version || echo "Rust not available"
+        cargo --version || echo "Cargo not available"
+        
+        # Check if BPF toolchain is available
+        rustup toolchain list | grep bpf || echo "BPF toolchain setup via Solana"
         slither --version || echo "Slither not available"
         myth version || echo "Mythril not available"
 
@@ -96,6 +111,9 @@ jobs:
         # Solana/Rust Analysis
         if [ -f "Anchor.toml" ] || [ -f "Cargo.toml" ]; then
           echo "🦀 Found Rust/Anchor project, running Solana analysis..."
+          
+          # Source cargo environment
+          source ~/.cargo/env
           
           # Setup Solana config
           solana config set --url localhost
