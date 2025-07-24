@@ -106,6 +106,13 @@ jobs:
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           echo "✅ Solana CLI PATH configured"
         fi
+        
+        # CRITICAL: Also check for direct installation to ~/.local/bin
+        if [ -f "$HOME/.local/bin/solana" ]; then
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "✅ Solana CLI found in ~/.local/bin"
+        fi
 
     - name: Verify Solana Installation  
       run: |
@@ -200,7 +207,7 @@ jobs:
         
         if ! pip show web3 >/dev/null 2>&1; then
           echo "Installing Web3 7.x ecosystem with compatible versions..."
-          pip install "web3==7.12.1" "eth-abi==5.0.1" "eth-account==0.13.7" "eth-keys==0.4.0" "eth-typing==3.5.2" "eth-utils==4.1.1" || echo "⚠️  Web3 installation failed, continuing..."
+          pip install "web3==7.12.1" "eth-abi==5.0.1" "eth-account==0.13.7" "eth-keys==0.4.0" "eth-utils==4.1.1" || echo "⚠️  Web3 installation failed, continuing..."
         fi
         
         # Install npm dependencies

@@ -83,16 +83,17 @@ jobs:
           fi
         fi
         
-        # Set up PATH for current and subsequent steps
+        # CRITICAL: Ensure PATH is set for current shell AND subsequent steps
         export PATH="$HOME/.local/bin:$PATH"
         echo "$HOME/.local/bin" >> $GITHUB_PATH
         
-        # Verify installation
+        # Verify installation and accessibility
         if command -v solana >/dev/null 2>&1; then
+          echo "✅ Solana CLI successfully installed and accessible"
           solana --version
-          echo "✅ Solana CLI successfully installed and verified"
         else
-          echo "⚠️  Solana CLI not accessible after installation"
+          echo "⚠️  Solana CLI installed but not accessible - checking binaries..."
+          ls -la "$HOME/.local/bin/solana"* 2>/dev/null || echo "No Solana binaries found in $HOME/.local/bin"
         fi
 
     - name: Set up Python
@@ -136,7 +137,7 @@ jobs:
         pip uninstall -y web3 eth-abi eth-account eth-keys eth-typing eth-utils || echo "No conflicting packages to remove"
         
         # Install compatible Web3 7.x ecosystem with exact versions
-        pip install "web3==7.12.1" "eth-abi==5.0.1" "eth-account==0.13.7" "eth-keys==0.4.0" "eth-typing==3.5.2" "eth-utils==4.1.1"
+        pip install "web3==7.12.1" "eth-abi==5.0.1" "eth-account==0.13.7" "eth-keys==0.4.0" "eth-utils==4.1.1"
         
         # Install security analysis tools
         pip install "slither-analyzer>=0.9.0,<1.0.0"
