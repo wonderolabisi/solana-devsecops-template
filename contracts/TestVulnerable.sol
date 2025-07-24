@@ -38,7 +38,7 @@ contract TestVulnerable {
         return result;
     }
     
-    function deposit() external payable {
+    function deposit() public payable {
         balances[msg.sender] += msg.value;
     }
     

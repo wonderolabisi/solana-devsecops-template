@@ -26,7 +26,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '16'
+        node-version: '18'
         cache: 'npm'
 
     - name: Setup Rust
@@ -85,13 +85,13 @@ jobs:
       run: |
         npm install || echo "NPM install failed, continuing..."
         
-        echo "📦 Installing Python security tools with proper build environment..."
-        # Install packages individually to handle distutils issues
-        pip install slither-analyzer || echo "⚠️  Slither installation failed, continuing..."
-        pip install mythril || echo "⚠️  Mythril installation failed, continuing..."
-        pip install solc-select || echo "⚠️  solc-select installation failed, continuing..."
-        pip install web3 || echo "⚠️  web3 installation failed, continuing..."
-        pip install requests || echo "⚠️  requests installation failed, continuing..."
+        echo "📦 Installing Python security tools with exact versions to avoid conflicts..."
+        # Use exact versions to prevent dependency conflicts
+        pip install "web3==6.15.1" "eth-abi==4.2.1" "eth-account==0.11.3" "eth-keys==0.4.0" "eth-typing==3.5.2" || echo "⚠️  Web3 stack installation failed, continuing..."
+        pip install "slither-analyzer>=0.9.0,<1.0.0" || echo "⚠️  Slither installation failed, continuing..."
+        pip install "mythril>=0.23.0,<1.0.0" || echo "⚠️  Mythril installation failed, continuing..."
+        pip install "solc-select>=1.0.0,<2.0.0" || echo "⚠️  solc-select installation failed, continuing..."
+        pip install "requests>=2.28.0,<3.0.0" || echo "⚠️  requests installation failed, continuing..."
 
     - name: Setup Solidity compiler
       run: |

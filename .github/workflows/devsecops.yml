@@ -31,7 +31,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '16'
+        node-version: '18'
         cache: 'npm'
 
     - name: Set up Python
@@ -113,11 +113,17 @@ jobs:
         if command -v solana >/dev/null 2>&1; then
           solana --version
           echo "✅ Solana CLI available and working"
+          echo "SOLANA_AVAILABLE=true" >> $GITHUB_ENV
         elif [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+          # Add to PATH for current step
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
           "$HOME/.local/share/solana/install/active_release/bin/solana" --version
-          echo "✅ Solana CLI available via absolute path"
+          echo "✅ Solana CLI available via absolute path (added to PATH)"
+          echo "SOLANA_AVAILABLE=true" >> $GITHUB_ENV
         else
           echo "⚠️  Solana CLI not available - will skip Solana features but continue workflow"
+          echo "SOLANA_AVAILABLE=false" >> $GITHUB_ENV
         fi
 
     - name: Setup Rust for Solana
@@ -177,27 +183,25 @@ jobs:
         # First ensure we have distutils and build tools
         python -m pip install --upgrade pip setuptools wheel
         
-        # Install Python security tools from requirements.txt
-        echo "📦 Installing Python security tools from requirements.txt..."
-        pip install -r requirements.txt || echo "⚠️  Some packages from requirements.txt failed, trying individual installation..."
+        # Install Python security tools from requirements.txt with exact versions
+        echo "📦 Installing Python security tools with locked versions..."
+        pip install -r requirements.txt --no-deps --force-reinstall || echo "⚠️  Requirements.txt installation failed, trying individual packages..."
         
-        # Fallback: Try to install individual packages if requirements.txt fails
+        # Verify and install individual packages with exact versions if needed
         if ! pip show slither-analyzer >/dev/null 2>&1; then
           echo "Installing slither-analyzer individually..."
-          pip install slither-analyzer || echo "⚠️  Slither installation failed, continuing..."
+          pip install "slither-analyzer>=0.9.0,<1.0.0" || echo "⚠️  Slither installation failed, continuing..."
         fi
         
         if ! pip show mythril >/dev/null 2>&1; then
           echo "Installing mythril individually..."
-          pip install mythril || echo "⚠️  Mythril installation failed, continuing..."
-        fi
-        
-        if ! pip show solc-select >/dev/null 2>&1; then
-          echo "Installing solc-select individually..."
-          pip install solc-select || echo "⚠️  solc-select installation failed, continuing..."
+          pip install "mythril>=0.23.0,<1.0.0" || echo "⚠️  Mythril installation failed, continuing..."
         fi
         
         if ! pip show web3 >/dev/null 2>&1; then
+          echo "Installing web3 with exact version..."
+          pip install "web3==6.15.1" "eth-abi==4.2.1" "eth-account==0.11.3" "eth-keys==0.4.0" "eth-typing==3.5.2" || echo "⚠️  Web3 installation failed, continuing..."
+        fi
           echo "Installing web3 and requests individually..."
           pip install web3 requests || echo "⚠️  Web3/requests installation failed, continuing..."
         fi
