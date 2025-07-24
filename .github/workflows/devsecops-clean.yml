@@ -36,56 +36,23 @@ jobs:
         override: true
         components: rustfmt, clippy
 
-    - name: Setup Solana BPF Target
+    - name: Install Solana CLI with official installer
       run: |
-        echo "🌟 Installing Solana CLI with multiple fallback methods..."
+        echo "🌟 Installing Solana CLI with official installer..."
         
-        # Method 1: Try stable release with enhanced curl options
-        echo "📦 Method 1: Trying stable release with enhanced curl..."
-        if curl --fail --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 300 -sSfL https://release.solana.com/stable/install | sh; then
-          echo "✅ Solana CLI installed via stable release"
-        else
-          echo "⚠️  Stable release failed, trying specific version..."
-          
-          # Method 2: Try specific version
-          if curl --fail --retry 3 --retry-delay 5 --connect-timeout 30 --max-time 300 -sSfL https://release.solana.com/v1.17.15/install | sh; then
-            echo "✅ Solana CLI installed via specific version"
-          else
-            echo "⚠️  Specific version failed, trying direct binary download..."
-            
-            # Method 3: Direct binary download
-            SOLANA_VERSION="1.17.15"
-            BINARY_URL="https://github.com/solana-labs/solana/releases/download/v${SOLANA_VERSION}/solana-release-x86_64-unknown-linux-gnu.tar.bz2"
-            
-            if curl --fail --retry 2 --connect-timeout 30 -L -o solana-release.tar.bz2 "$BINARY_URL"; then
-              echo "✅ Downloaded Solana binary directly"
-              tar -xjf solana-release.tar.bz2
-              mkdir -p "$HOME/.local/share/solana/install/active_release"
-              cp -r solana-release/* "$HOME/.local/share/solana/install/active_release/"
-              chmod +x "$HOME/.local/share/solana/install/active_release/bin"/*
-              echo "✅ Solana CLI installed via direct binary"
-            else
-              echo "⚠️  All installation methods failed, continuing without Solana CLI..."
-              echo "SOLANA_AVAILABLE=false" >> $GITHUB_ENV
-              exit 0  # Don't fail the workflow
-            fi
-          fi
-        fi
+        # Use official Solana install script to user-writable directory
+        curl -sSfL https://release.solana.com/v1.17.15/install | sh -s - -b $HOME/.local/bin || {
+          echo "❌ Solana CLI installation failed!"
+          exit 1
+        }
         
-        # Add to GITHUB_PATH for all subsequent steps
-        if [ -d "$HOME/.local/share/solana/install/active_release/bin" ]; then
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-          echo "✅ Solana CLI PATH configured"
-          
-          # Try to initialize BPF tools (optional)
-          if command -v solana >/dev/null 2>&1; then
-            solana install init || echo "⚠️  BPF initialization failed, but CLI is available"
-          fi
-        else
-          echo "⚠️  Solana installation directory not found"
-          echo "SOLANA_AVAILABLE=false" >> $GITHUB_ENV
-        fi
+        # Set up PATH for current and subsequent steps
+        export PATH="$HOME/.local/bin:$PATH"
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        
+        # Verify installation
+        solana --version
+        echo "✅ Solana CLI successfully installed and verified"
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -123,13 +90,21 @@ jobs:
         npm install || echo "NPM install failed, continuing..."
         
         echo "📦 Installing Python security tools with stable Web3 6.x ecosystem..."
-        # Use stable Web3 6.x ecosystem to prevent dependency conflicts
-        pip install "web3==6.20.3" "eth-abi==4.2.1" "eth-account==0.11.3" "eth-keys==0.4.0" "eth-typing==3.5.2" || echo "⚠️  Web3 stack installation failed, continuing..."
-        pip install "slither-analyzer>=0.9.0,<1.0.0" || echo "⚠️  Slither installation failed, continuing..."
-        pip install "mythril>=0.23.0,<1.0.0" || echo "⚠️  Mythril installation failed, continuing..."
-        pip install "solc-select>=1.0.0,<2.0.0" || echo "⚠️  solc-select installation failed, continuing..."
-        pip install "requests>=2.28.0,<3.0.0" || echo "⚠️  requests installation failed, continuing..."
-        pip install "semgrep>=1.0.0,<2.0.0" || echo "⚠️  semgrep installation failed, continuing..."
+        
+        # First, ensure clean environment by removing conflicting packages
+        pip uninstall -y web3 eth-abi eth-account eth-keys eth-typing || echo "No conflicting packages to remove"
+        
+        # Install stable Web3 6.x ecosystem with compatible versions
+        pip install "web3==6.20.3" "eth-abi==4.2.1" "eth-account==0.11.3" "eth-keys==0.4.0" "eth-typing==3.5.2"
+        
+        # Install security analysis tools
+        pip install "slither-analyzer>=0.9.0,<1.0.0"
+        pip install "mythril>=0.23.0,<1.0.0"  
+        pip install "solc-select>=1.0.0,<2.0.0"
+        pip install "requests>=2.28.0,<3.0.0"
+        pip install "semgrep>=1.0.0,<2.0.0"
+        
+        echo "✅ All Python dependencies installed successfully"
 
     - name: Verify Solana CLI
       run: |
@@ -174,13 +149,14 @@ jobs:
         if [ -d "contracts" ] && ls contracts/*.sol 1> /dev/null 2>&1; then
           echo "📝 Found Solidity contracts, running Ethereum analysis..."
           
-          # Run Slither
-          slither . --json reports/slither-report.json || echo "Slither analysis completed with warnings"
+          # Run Slither - critical step, should fail if there are serious issues
+          echo "🐍 Running Slither analysis..."
+          slither . --json reports/slither-report.json
           
-          # Run Mythril on contracts
+          # Run Mythril on contracts - timeout but don't mask failures
           find contracts -name "*.sol" | head -5 | while read contract; do
             echo "🧙 Analyzing $contract with Mythril..."
-            timeout 300 myth analyze "$contract" --solv 0.8.19 --json > "reports/mythril-$(basename $contract .sol).json" 2>/dev/null || echo "Mythril analysis completed for $contract"
+            timeout 300 myth analyze "$contract" --solv 0.8.19 --json > "reports/mythril-$(basename $contract .sol).json" 2>&1
           done
         fi
         
@@ -190,14 +166,16 @@ jobs:
           
           # Setup Solana config
           solana config set --url localhost
-          solana-keygen new --no-bip39-passphrase --silent || echo "Key generation completed"
+          solana-keygen new --no-bip39-passphrase --silent
           
-          # Rust security audit
-          cargo install cargo-audit || echo "Cargo audit already installed"
-          cargo audit --json > reports/cargo-audit.json || echo "Cargo audit completed"
+          # Rust security audit - critical step
+          echo "🔍 Running Cargo security audit..."
+          cargo install cargo-audit
+          cargo audit --json > reports/cargo-audit.json
           
-          # Clippy analysis
-          cargo clippy --all-targets --all-features -- -D warnings > reports/clippy-analysis.txt 2>&1 || echo "Clippy analysis completed"
+          # Clippy analysis - should catch serious linting issues
+          echo "📎 Running Clippy analysis..."
+          cargo clippy --all-targets --all-features -- -D warnings > reports/clippy-analysis.txt 2>&1
           
           # Anchor tests
           if [ -f "Anchor.toml" ]; then
