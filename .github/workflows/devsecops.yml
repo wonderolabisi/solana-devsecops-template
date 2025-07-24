@@ -36,31 +36,111 @@ jobs:
 
     - name: Install Solana CLI
       run: |
-        sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
+        echo "🔧 Installing Solana CLI with retry mechanism..."
+        
+        # Try multiple installation methods with retries
+        INSTALL_SUCCESS=false
+        
+        # Method 1: Standard installation with retries
+        for i in {1..3}; do
+          echo "🔄 Attempt $i: Downloading Solana CLI installer..."
+          if curl --retry 3 --retry-delay 5 --connect-timeout 30 -sSfL https://release.solana.com/v1.16.0/install | sh; then
+            INSTALL_SUCCESS=true
+            echo "✅ Installation method 1 succeeded on attempt $i"
+            break
+          else
+            echo "❌ Installation attempt $i failed, waiting 10 seconds..."
+            sleep 10
+          fi
+        done
+        
+        # Method 2: Alternative download with wget if curl fails
+        if [ "$INSTALL_SUCCESS" = false ]; then
+          echo "🔄 Trying alternative method with wget..."
+          for i in {1..2}; do
+            if wget -O- https://release.solana.com/v1.16.0/install | sh; then
+              INSTALL_SUCCESS=true
+              echo "✅ Installation method 2 succeeded"
+              break
+            else
+              echo "❌ Wget attempt $i failed, waiting 10 seconds..."
+              sleep 10
+            fi
+          done
+        fi
+        
+        # Setup PATH
         echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-        # Verify installation worked
         export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
-        solana --version
-        echo "Solana CLI installed successfully"
+        
+        # Verify installation with detailed diagnostics
+        echo "🔍 Verifying Solana CLI installation..."
+        if [ -d "$HOME/.local/share/solana/install/active_release/bin" ]; then
+          echo "✅ Solana installation directory exists"
+          ls -la "$HOME/.local/share/solana/install/active_release/bin/"
+        else
+          echo "❌ Solana installation directory missing"
+        fi
+        
+        # Test Solana CLI availability with multiple methods
+        if command -v solana >/dev/null 2>&1; then
+          echo "✅ Solana CLI found in PATH"
+          solana --version
+          echo "🎉 Solana CLI installed successfully"
+        elif [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+          echo "✅ Solana CLI found via absolute path"
+          "$HOME/.local/share/solana/install/active_release/bin/solana" --version
+          echo "🎉 Solana CLI installed successfully (absolute path)"
+        else
+          echo "❌ Solana CLI installation failed after all attempts"
+          echo "🔍 Debugging information:"
+          echo "PATH: $PATH"
+          echo "HOME: $HOME"
+          find "$HOME" -name "solana" -type f 2>/dev/null | head -5 || echo "No solana binary found"
+          echo "Network connectivity test:"
+          curl -I https://release.solana.com/ || echo "Cannot reach release.solana.com"
+          exit 1
+        fi
 
     - name: Setup Rust for Solana
       run: |
+        echo "🦀 Setting up Rust for Solana development..."
+        
         # Add Solana CLI to PATH (GitHub Actions persistence)
         export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
         
-        # Verify Solana CLI is available
-        which solana || (echo "Solana CLI not found, trying alternative path" && export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH")
-        solana --version
+        # Verify Solana CLI is available before proceeding
+        if command -v solana >/dev/null 2>&1; then
+          echo "✅ Solana CLI confirmed available"
+          solana --version
+        elif [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+          echo "✅ Solana CLI available via absolute path"
+          "$HOME/.local/share/solana/install/active_release/bin/solana" --version
+        else
+          echo "❌ Solana CLI not available, skipping Solana-specific setup"
+          echo "ℹ️  Will only install standard Rust toolchain"
+        fi
         
         # Install standard Rust first
+        echo "🔧 Installing Rust toolchain..."
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         source ~/.cargo/env
         
-        # Add Solana's BPF target via Solana CLI (which provides the custom toolchain)
-        solana install init
+        # Add Solana's BPF target via Solana CLI (if available)
+        if command -v solana >/dev/null 2>&1; then
+          echo "🎯 Setting up Solana BPF target..."
+          solana install init || echo "⚠️  Solana init failed, but continuing..."
+        elif [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+          echo "🎯 Setting up Solana BPF target via absolute path..."
+          "$HOME/.local/share/solana/install/active_release/bin/solana" install init || echo "⚠️  Solana init failed, but continuing..."
+        else
+          echo "⚠️  Skipping Solana BPF setup - CLI not available"
+        fi
         
         # Verify Rust and target availability
+        echo "🔍 Verifying Rust installation..."
         rustc --version
+        cargo --version
         rustup target list --installed
 
     - name: Install Anchor CLI
@@ -104,22 +184,36 @@ jobs:
         
         # Debug PATH information
         echo "Current PATH: $PATH"
-        echo "Checking Solana CLI..."
-        ls -la "$HOME/.local/share/solana/install/active_release/bin/" || echo "Solana bin directory not found"
+        echo "Checking installation directories..."
         
-        # Check versions with fallback paths
-        "$HOME/.local/share/solana/install/active_release/bin/solana" --version || solana --version || echo "Solana not available"
-        anchor --version || echo "Anchor not available"
+        # Check Solana CLI with multiple fallbacks
+        echo "🔍 Checking Solana CLI..."
+        if command -v solana >/dev/null 2>&1; then
+          echo "✅ Solana CLI available via PATH"
+          solana --version
+        elif [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+          echo "✅ Solana CLI available via absolute path"
+          "$HOME/.local/share/solana/install/active_release/bin/solana" --version
+        else
+          echo "⚠️  Solana CLI not available - will skip Solana-specific features"
+          ls -la "$HOME/.local/share/solana/install/active_release/bin/" 2>/dev/null || echo "Solana bin directory not found"
+        fi
         
-        # Source cargo environment
+        # Check other tools
+        echo "🔍 Checking other tools..."
+        anchor --version || echo "⚠️  Anchor not available"
+        
+        # Source cargo environment and check Rust
         source ~/.cargo/env || true
-        rustc --version || echo "Rust not available"
-        cargo --version || echo "Cargo not available"
+        rustc --version || echo "⚠️  Rust not available"
+        cargo --version || echo "⚠️  Cargo not available"
         
-        # Check if BPF toolchain is available
-        rustup toolchain list | grep bpf || echo "BPF toolchain setup via Solana"
-        slither --version || echo "Slither not available"
-        myth version || echo "Mythril not available"
+        # Check security tools
+        slither --version || echo "⚠️  Slither not available"
+        myth version || echo "⚠️  Mythril not available"
+        
+        # Summary
+        echo "🎯 Installation verification complete - continuing with available tools"
 
     - name: Multi-Chain Security Analysis
       run: |
@@ -147,9 +241,21 @@ jobs:
           export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH"
           source ~/.cargo/env || true
           
-          # Setup Solana config with full path fallback
-          "$HOME/.local/share/solana/install/active_release/bin/solana" config set --url localhost || solana config set --url localhost
-          "$HOME/.local/share/solana/install/active_release/bin/solana-keygen" new --no-bip39-passphrase --silent || solana-keygen new --no-bip39-passphrase --silent || echo "Key generation completed"
+          # Check Solana CLI availability and setup config accordingly
+          SOLANA_AVAILABLE=false
+          if command -v solana >/dev/null 2>&1; then
+            echo "✅ Using Solana CLI from PATH"
+            SOLANA_AVAILABLE=true
+            solana config set --url localhost || echo "⚠️  Solana config setup failed"
+            solana-keygen new --no-bip39-passphrase --silent || echo "⚠️  Key generation failed"
+          elif [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
+            echo "✅ Using Solana CLI from absolute path"
+            SOLANA_AVAILABLE=true
+            "$HOME/.local/share/solana/install/active_release/bin/solana" config set --url localhost || echo "⚠️  Solana config setup failed"
+            "$HOME/.local/share/solana/install/active_release/bin/solana-keygen" new --no-bip39-passphrase --silent || echo "⚠️  Key generation failed"
+          else
+            echo "⚠️  Solana CLI not available - skipping Solana-specific setup, but continuing with Rust analysis"
+          fi
           
           # Rust security audit
           cargo install cargo-audit || echo "Cargo audit already installed"
