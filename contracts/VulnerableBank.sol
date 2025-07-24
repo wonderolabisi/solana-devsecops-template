@@ -1,5 +1,5 @@
-# Example Vulnerable Contract for Testing
-# SPDX-License-Identifier: MIT
+// Example Vulnerable Contract for Testing
+// SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
 

@@ -6,7 +6,12 @@ on:
   pull_request:
     branches: [ main, develop ]
   schedule:
-    - cron: '0 2 * * 1'  # Weekly runs on Monday 2 AM
+    - cron: '0 2 * * 1'  # Weekly runs on Monda        # Install Semgrep for SAST analysis
+        echo "📡 Installing Semgrep (Static Analysis Security Tool)..."
+        pip install semgrep || echo "⚠️  Semgrep installation failed, continuing..."
+        
+        # Note: 4naly3er not available on PyPI - using alternative gas analysis via Slither
+        echo "⛽ Note: Using Slither gas optimization analysis instead of 4naly3er"
   workflow_dispatch:     # Manual trigger
 
 env:
@@ -26,7 +31,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
 
     - name: Set up Python
@@ -276,7 +281,7 @@ jobs:
         # Check enhanced security tools
         echo "🚀 Checking enhanced security tools..."
         semgrep --version || echo "⚠️  Semgrep not available"
-        4naly3er --version || echo "⚠️  4naly3er not available"
+        echo "⛽ Gas Analysis: Using Slither gas optimization features (4naly3er not available on PyPI)"
         docker run --rm trailofbits/echidna:latest --version || echo "⚠️  Echidna not available"
         
         echo "🎯 Installation verification complete"
@@ -289,12 +294,9 @@ jobs:
         if [ -d "contracts" ] && ls contracts/*.sol 1> /dev/null 2>&1; then
           echo "📝 Found Solidity contracts, running Ethereum analysis..."
           
-          # Run Slither
+          # Run Slither with gas optimization analysis
           slither . --json reports/slither-report.json || echo "Slither analysis completed with warnings"
-          
-          # Run enhanced gas analysis with 4naly3er
-          echo "⛽ Running advanced gas optimization analysis..."
-          4naly3er . > reports/4naly3er-gas-report.txt 2>&1 || echo "4naly3er analysis completed with warnings"
+          slither . --print human-summary > reports/slither-gas-optimization.txt 2>&1 || echo "Slither gas analysis completed"
           
           # Run Mythril on contracts
           find contracts -name "*.sol" | head -5 | while read contract; do
@@ -318,7 +320,6 @@ jobs:
         # Custom security patterns
         echo "🔍 Running custom security pattern analysis..."
         semgrep --config=p/security-audit --json --output=reports/semgrep-security-audit.json . || echo "Security audit patterns completed"
-        fi
         
         # Solana/Rust Analysis
         if [ -f "Anchor.toml" ] || [ -f "Cargo.toml" ]; then
