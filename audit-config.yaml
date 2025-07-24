@@ -1,0 +1,7 @@
+# Audit scope and metadata
+targets:
+  - contracts/
+  - .
+exclude:
+  - test/
+  - mocks/

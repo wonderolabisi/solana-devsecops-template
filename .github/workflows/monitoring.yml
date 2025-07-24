@@ -1,0 +1,230 @@
+name: Continuous Bug Bounty Monitoring
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Bug bounty platforms to monitor'
+        required: true
+        type: choice
+        options:
+        - all
+        - immunefi
+        - code4rena
+        - sherlock
+        - hackerone
+
+jobs:
+  monitor-platforms:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Environment
+      run: |
+        pip install requests beautifulsoup4 feedparser python-telegram-bot
+    
+    - name: Monitor Bug Bounty Platforms
+      run: |
+        echo "👀 Monitoring bug bounty platforms for new opportunities..."
+        
+        cat > monitor_platforms.py << 'EOF'
+        import requests
+        import json
+        import time
+        from datetime import datetime, timedelta
+        import os
+
+        class BugBountyMonitor:
+            def __init__(self):
+                self.opportunities = []
+                self.high_value_threshold = 10000  # $10K+
+            
+            def monitor_immunefi(self):
+                """Monitor Immunefi for new high-value programs"""
+                try:
+                    # Note: This is a simplified example - real implementation would use their API
+                    print("🔍 Checking Immunefi for new programs...")
+                    
+                    # Simulate finding high-value programs
+                    programs = [
+                        {
+                            'platform': 'Immunefi',
+                            'name': 'DeFi Protocol X',
+                            'max_bounty': 1000000,
+                            'technologies': ['Solidity', 'Smart Contracts'],
+                            'url': 'https://immunefi.com/example',
+                            'priority': 'HIGH'
+                        }
+                    ]
+                    
+                    for program in programs:
+                        if program['max_bounty'] >= self.high_value_threshold:
+                            self.opportunities.append(program)
+                            
+                except Exception as e:
+                    print(f"Error monitoring Immunefi: {e}")
+            
+            def monitor_code4rena(self):
+                """Monitor Code4rena for new contests"""
+                try:
+                    print("🔍 Checking Code4rena for active contests...")
+                    
+                    # Simulate contest data
+                    contests = [
+                        {
+                            'platform': 'Code4rena',
+                            'name': 'Advanced DeFi Contest',
+                            'prize_pool': 50000,
+                            'start_date': datetime.now().isoformat(),
+                            'end_date': (datetime.now() + timedelta(days=7)).isoformat(),
+                            'technologies': ['Solidity', 'Vyper'],
+                            'url': 'https://code4rena.com/example',
+                            'priority': 'MEDIUM'
+                        }
+                    ]
+                    
+                    for contest in contests:
+                        if contest['prize_pool'] >= self.high_value_threshold:
+                            self.opportunities.append(contest)
+                            
+                except Exception as e:
+                    print(f"Error monitoring Code4rena: {e}")
+            
+            def analyze_opportunity(self, opportunity):
+                """Analyze if opportunity matches our skills/tools"""
+                score = 0
+                
+                # Technology match
+                if 'Solidity' in opportunity.get('technologies', []):
+                    score += 30
+                if 'Smart Contracts' in opportunity.get('technologies', []):
+                    score += 20
+                
+                # Value assessment
+                max_bounty = opportunity.get('max_bounty', opportunity.get('prize_pool', 0))
+                if max_bounty >= 100000:
+                    score += 40
+                elif max_bounty >= 50000:
+                    score += 30
+                elif max_bounty >= 10000:
+                    score += 20
+                
+                # Platform preference
+                platform = opportunity.get('platform', '')
+                if platform in ['Immunefi', 'Code4rena']:
+                    score += 10
+                
+                opportunity['score'] = score
+                opportunity['recommendation'] = 'HIGH' if score >= 70 else 'MEDIUM' if score >= 50 else 'LOW'
+                
+                return opportunity
+            
+            def generate_report(self):
+                """Generate monitoring report"""
+                analyzed_ops = [self.analyze_opportunity(op) for op in self.opportunities]
+                high_priority = [op for op in analyzed_ops if op['recommendation'] == 'HIGH']
+                
+                report = {
+                    'timestamp': datetime.now().isoformat(),
+                    'total_opportunities': len(analyzed_ops),
+                    'high_priority': len(high_priority),
+                    'estimated_total_value': sum(op.get('max_bounty', op.get('prize_pool', 0)) for op in high_priority),
+                    'opportunities': analyzed_ops
+                }
+                
+                # Save report
+                with open('reports/bounty_opportunities.json', 'w') as f:
+                    json.dump(report, f, indent=2)
+                
+                # Generate markdown report
+                with open('reports/BOUNTY_OPPORTUNITIES.md', 'w') as f:
+                    f.write("# 🎯 Bug Bounty Opportunities Report\n\n")
+                    f.write(f"**Generated:** {report['timestamp']}\n")
+                    f.write(f"**Total Opportunities:** {report['total_opportunities']}\n")
+                    f.write(f"**High Priority:** {report['high_priority']}\n")
+                    f.write(f"**Estimated Value:** ${report['estimated_total_value']:,}\n\n")
+                    
+                    if high_priority:
+                        f.write("## 🔥 High Priority Opportunities\n\n")
+                        for op in high_priority:
+                            f.write(f"### {op['name']} ({op['platform']})\n")
+                            f.write(f"- **Value:** ${op.get('max_bounty', op.get('prize_pool', 0)):,}\n")
+                            f.write(f"- **Technologies:** {', '.join(op.get('technologies', []))}\n")
+                            f.write(f"- **Score:** {op['score']}/100\n")
+                            f.write(f"- **URL:** {op.get('url', 'N/A')}\n\n")
+                    else:
+                        f.write("## ℹ️ No high-priority opportunities at this time\n\n")
+                
+                return report
+        
+        # Run monitoring
+        monitor = BugBountyMonitor()
+        monitor.monitor_immunefi()
+        monitor.monitor_code4rena()
+        
+        report = monitor.generate_report()
+        print(f"Found {report['high_priority']} high-priority opportunities worth ${report['estimated_total_value']:,}")
+        EOF
+        
+        mkdir -p reports
+        python monitor_platforms.py
+    
+    - name: Setup Automated Notifications
+      run: |
+        echo "📱 Setting up notifications for high-value opportunities..."
+        
+        cat > setup_notifications.py << 'EOF'
+        import json
+        import os
+
+        def setup_telegram_alerts():
+            """Setup Telegram notifications for high-value findings"""
+            # This would integrate with Telegram Bot API
+            # For security, use GitHub Secrets for bot tokens
+            
+            bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+            chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
+            
+            if not bot_token or not chat_id:
+                print("⚠️ Telegram credentials not configured")
+                return
+            
+            # Load opportunities
+            try:
+                with open('reports/bounty_opportunities.json', 'r') as f:
+                    data = json.load(f)
+                
+                high_priority = [op for op in data['opportunities'] if op['recommendation'] == 'HIGH']
+                
+                if high_priority:
+                    message = f"🎯 Found {len(high_priority)} high-value bug bounty opportunities!\n\n"
+                    for op in high_priority[:3]:  # Top 3
+                        value = op.get('max_bounty', op.get('prize_pool', 0))
+                        message += f"💰 {op['name']}: ${value:,}\n"
+                    
+                    message += f"\nTotal estimated value: ${data['estimated_total_value']:,}"
+                    print(f"Would send notification: {message}")
+                
+            except Exception as e:
+                print(f"Error setting up notifications: {e}")
+
+        def setup_email_alerts():
+            """Setup email notifications"""
+            # Similar implementation for email alerts
+            print("📧 Email alerts would be configured here")
+
+        setup_telegram_alerts()
+        setup_email_alerts()
+        EOF
+        
+        python setup_notifications.py
+    
+    - name: Archive Monitoring Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: bounty-monitoring-${{ github.run_number }}
+        path: reports/

@@ -1,0 +1,41 @@
+# False Positive Management Configuration
+
+# Slither false positive suppressions
+slither_suppressions:
+  # Common false positives to ignore
+  - "pragma-version"  # Often flagged incorrectly
+  - "solc-version"    # Version warnings
+  - "low-level-calls" # When used safely
+  - "assembly"        # When assembly is necessary
+  - "external-function" # Public functions that should be external
+  - "naming-convention" # Style issues
+  - "unused-return"   # When return values are intentionally ignored
+
+# Mythril false positive patterns
+mythril_ignore_patterns:
+  - "SWC-103"  # Floating pragma (often intentional)
+  - "SWC-108"  # State variable default visibility (style issue)
+  - "SWC-111"  # Use of deprecated functions (when using latest Solidity)
+
+# Semgrep custom rules to reduce noise
+semgrep_custom_rules:
+  exclude_paths:
+    - "test/"
+    - "tests/"
+    - "mocks/"
+    - "scripts/"
+    - "migrations/"
+  
+# Context-aware filtering
+context_filters:
+  # Ignore reentrancy warnings in view/pure functions
+  reentrancy_exceptions:
+    - "view functions"
+    - "pure functions" 
+    - "functions with nonReentrant modifier"
+  
+  # Ignore access control warnings for intended public functions
+  access_control_exceptions:
+    - "constructor functions"
+    - "fallback functions"
+    - "receive functions"

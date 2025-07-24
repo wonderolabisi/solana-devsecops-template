@@ -1,0 +1,17 @@
+# Echidna configuration for property-based testing
+testMode: "property"
+testLimit: 50000
+timeout: 600
+shrinkLimit: 5000
+seqLen: 100
+contractAddr: "0x00a329c0648769A73afAc7F9381E08FB43dBEA72"
+deployer: "0x41414141414141414141414141414141414141"
+sender: ["0x42424242424242424242424242424242424242", "0x43434343434343434343434343434343434343"]
+psender: 0.5
+fprefix: "echidna_"
+cryticArgs: ["--solc-version", "0.8.19"]
+solcArgs: ["--optimize"]
+quiet: false
+initialize: []
+multi-abi: false
+allowFFI: false

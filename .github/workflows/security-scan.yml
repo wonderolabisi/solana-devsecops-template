@@ -1,0 +1,59 @@
+name: Deep Security Scan
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_contract:
+        description: 'Specific contract to analyze (optional)'
+        required: false
+        type: string
+      analysis_depth:
+        description: 'Analysis depth'
+        required: true
+        default: 'standard'
+        type: choice
+        options:
+        - standard
+        - deep
+        - comprehensive
+
+jobs:
+  deep-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Analysis Environment
+      run: |
+        # Install comprehensive toolset
+        sudo apt-get update
+        sudo apt-get install -y python3-pip nodejs npm
+        pip3 install slither-analyzer mythril manticore echidna-parade
+        npm install -g solhint @crytic/echidna surya
+
+    - name: Run Comprehensive Analysis
+      run: |
+        mkdir -p reports/deep-scan
+        
+        # Advanced Slither checks
+        slither . --print inheritance-graph --json reports/deep-scan/inheritance.json
+        slither . --print contract-summary > reports/deep-scan/contract-summary.txt
+        slither . --print function-summary > reports/deep-scan/function-summary.txt
+        
+        # Property-based testing with Echidna (if available)
+        if [ -d "echidna" ]; then
+          echidna-test . --config echidna/config.yaml > reports/deep-scan/echidna-results.txt || true
+        fi
+        
+        # Generate call graphs
+        find . -name "*.sol" -not -path "./test/*" | head -5 | while read contract; do
+          surya graph "$contract" | dot -Tpng > "reports/deep-scan/$(basename "$contract" .sol)-graph.png" || true
+        done
+
+    - name: Upload Deep Scan Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: deep-security-scan-${{ github.run_number }}
+        path: reports/deep-scan/

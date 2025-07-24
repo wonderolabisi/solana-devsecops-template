@@ -1,0 +1,72 @@
+{
+  "rules": [
+    {
+      "rule": "pragma-version",
+      "justification": "Floating pragma is acceptable for libraries and development",
+      "paths": ["contracts/libraries/", "contracts/mocks/", "test/"]
+    },
+    {
+      "rule": "external-function", 
+      "justification": "Interface functions must be public",
+      "functions": ["interface", "abstract"]
+    },
+    {
+      "rule": "low-level-calls",
+      "justification": "Safe low-level calls with proper checks",
+      "patterns": [
+        "require.*success.*Transfer failed",
+        "require.*success.*Call failed", 
+        "assembly.*success.*revert"
+      ]
+    },
+    {
+      "rule": "assembly",
+      "justification": "Necessary assembly for gas optimization",
+      "contexts": ["gas optimization", "memory manipulation", "signature recovery"]
+    },
+    {
+      "rule": "reentrancy-eth",
+      "exceptions": [
+        {
+          "function_modifier": "nonReentrant",
+          "justification": "Protected by reentrancy guard"
+        },
+        {
+          "function_type": "view",
+          "justification": "View functions cannot modify state"
+        },
+        {
+          "function_type": "pure", 
+          "justification": "Pure functions cannot access state"
+        }
+      ]
+    },
+    {
+      "rule": "unused-return",
+      "exceptions": [
+        {
+          "function_name": "transfer",
+          "justification": "ERC20 transfer return value intentionally ignored for compatibility"
+        },
+        {
+          "function_name": "approve",
+          "justification": "ERC20 approve return value handling varies by implementation"
+        }
+      ]
+    }
+  ],
+  "global_exceptions": {
+    "test_files": {
+      "paths": ["test/", "tests/", "spec/"],
+      "ignore_rules": ["external-function", "naming-convention", "unused-return"]
+    },
+    "library_files": {
+      "paths": ["contracts/libraries/", "lib/"],
+      "ignore_rules": ["pragma-version", "solc-version"]
+    },
+    "mock_files": {
+      "paths": ["contracts/mocks/", "mocks/"],
+      "ignore_rules": ["all"]
+    }
+  }
+}

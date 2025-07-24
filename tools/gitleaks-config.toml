@@ -1,0 +1,37 @@
+# GitLeaks configuration for secret detection
+title: "Web3 Secret Detection"
+
+[[rules]]
+id = "private-key-ethereum"
+description = "Ethereum private key"
+regex = '''(?i)(\b[0-9a-f]{64}\b)'''
+keywords = ["private", "key", "secret"]
+
+[[rules]]
+id = "api-key-infura"
+description = "Infura API key"
+regex = '''(?i)(infura[_-]?api[_-]?key[_-]?[:=]\s*['\"]?[0-9a-f]{32}['\"]?)'''
+
+[[rules]]
+id = "api-key-alchemy"
+description = "Alchemy API key"  
+regex = '''(?i)(alchemy[_-]?api[_-]?key[_-]?[:=]\s*['\"]?[0-9a-zA-Z_-]{32}['\"]?)'''
+
+[[rules]]
+id = "mnemonic-phrase"
+description = "Mnemonic seed phrase"
+regex = '''(?i)\b([a-z]+\s+){11,23}[a-z]+\b'''
+keywords = ["mnemonic", "seed", "phrase"]
+
+[[rules]]
+id = "hardhat-accounts"
+description = "Hardhat test accounts"
+regex = '''(?i)(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80)'''
+
+[allowlist]
+paths = [
+    "test/",
+    "tests/",
+    "spec/",
+    "docs/"
+]

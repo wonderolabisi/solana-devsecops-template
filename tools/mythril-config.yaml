@@ -1,0 +1,24 @@
+# Mythril configuration for comprehensive analysis
+checkTimeout: 300
+solcVersion: "0.8.19"
+analysisStrategy: "dfs"
+maxDepth: 64
+callDepthLimit: 10
+loopBound: 5
+createTimeout: 60
+enablePhysics: true
+solver: "z3"
+executionTimeout: 3600
+
+# Vulnerability detection settings
+vulnerabilityChecks:
+  - reentrancy
+  - integer_overflow
+  - integer_underflow
+  - assertion_failure
+  - unchecked_call
+  - delegatecall
+  - predictable_vars
+  - weak_randomness
+  - access_control
+  - suicide

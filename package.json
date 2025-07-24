@@ -1,0 +1,41 @@
+{
+  "name": "web3-devsecops-audit-template",
+  "version": "1.0.0",
+  "description": "Professional bug bounty hunting pipeline",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "analyze": "npm run slither && npm run mythril",
+    "slither": "slither .",
+    "mythril": "myth analyze contracts/*.sol",
+    "exploit-test": "hardhat test exploits/test_exploits.js",
+    "bounty-hunt": "gh workflow run devsecops.yml",
+    "generate-exploits": "gh workflow run exploit-generation.yml",
+    "monitor-platforms": "gh workflow run monitoring.yml"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@typechain/hardhat": "^9.0.0",
+    "@typechain/ethers-v6": "^0.5.0",
+    "chai": "^4.2.0",
+    "ethers": "^6.4.0",
+    "hardhat": "^2.19.0",
+    "hardhat-gas-reporter": "^1.0.8",
+    "solidity-coverage": "^0.8.1",
+    "typechain": "^8.3.0"
+  },
+  "keywords": [
+    "bug-bounty",
+    "smart-contracts",
+    "security",
+    "devsecops",
+    "ethereum",
+    "solidity"
+  ],
+  "author": "Bug Bounty Hunter",
+  "license": "MIT"
+}

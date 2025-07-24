@@ -1,0 +1,62 @@
+{
+  "exclude_paths": ["test/", "mocks/", "node_modules/", "lib/", "script/", "migrations/"],
+  "exclude_dependencies": true,
+  "exclude_optimization": false,
+  "exclude_informational": true,
+  "exclude_low": false,
+  "exclude_medium": false,
+  "exclude_high": false,
+  "json": "reports/slither-detailed.json",
+  "sarif": "reports/slither.sarif",
+  "checklist": true,
+  "markdown-root": "reports/",
+  "filter_paths": "tools/slither-filter.json",
+  "detectors_to_exclude": [
+    "pragma-version",
+    "solc-version", 
+    "assembly",
+    "low-level-calls",
+    "naming-convention",
+    "external-function",
+    "unused-return",
+    "similar-names",
+    "too-many-digits",
+    "constable-states",
+    "immutable-states"
+  ],
+  "detectors_to_include": [
+    "reentrancy-eth",
+    "reentrancy-no-eth", 
+    "unprotected-upgrade",
+    "suicidal",
+    "uninitialized-state",
+    "uninitialized-storage",
+    "arbitrary-send",
+    "controlled-delegatecall",
+    "weak-prng",
+    "domain-separator-collision",
+    "signature-malleability",
+    "incorrect-equality",
+    "encode-packed-collision",
+    "arbitrary-send-erc20",
+    "delegatecall-loop",
+    "msg-value-loop",
+    "calls-loop",
+    "costly-loop"
+  ],
+  "printers": [
+    "call-graph",
+    "cfg", 
+    "contract-summary",
+    "data-dependency",
+    "function-summary",
+    "inheritance-graph",
+    "human-summary"
+  ],
+  "disable_color": true,
+  "filter_paths_exclude": [
+    "node_modules",
+    "@openzeppelin/contracts",
+    "hardhat/console.sol"
+  ]
+}
