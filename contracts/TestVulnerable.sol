@@ -7,7 +7,7 @@ pragma solidity ^0.8.19;
  */
 contract TestVulnerable {
     mapping(address => uint256) public balances;
-    address public owner;
+    address public immutable owner;
     bool private locked;
     
     constructor() {

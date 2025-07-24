@@ -130,13 +130,13 @@ jobs:
       run: |
         npm install || echo "NPM install failed, continuing..."
         
-        echo "📦 Installing Python security tools with stable Web3 6.x ecosystem..."
+        echo "📦 Installing Python security tools with compatible Web3 7.x ecosystem..."
         
         # First, ensure clean environment by removing conflicting packages
-        pip uninstall -y web3 eth-abi eth-account eth-keys eth-typing || echo "No conflicting packages to remove"
+        pip uninstall -y web3 eth-abi eth-account eth-keys eth-typing eth-utils || echo "No conflicting packages to remove"
         
-        # Install stable Web3 6.x ecosystem with compatible versions
-        pip install "web3==6.20.3" "eth-abi==4.2.1" "eth-account==0.11.3" "eth-keys==0.4.0" "eth-typing==3.5.2"
+        # Install compatible Web3 7.x ecosystem with exact versions
+        pip install "web3==7.12.1" "eth-abi==5.0.1" "eth-account==0.13.7" "eth-keys==0.4.0" "eth-typing==3.5.2" "eth-utils==4.1.1"
         
         # Install security analysis tools
         pip install "slither-analyzer>=0.9.0,<1.0.0"

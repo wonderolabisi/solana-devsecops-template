@@ -120,7 +120,7 @@ contract VulnerableBank {
  * @dev Demonstrates reentrancy attack on VulnerableBank
  */
 contract ReentrancyAttacker {
-    VulnerableBank public bank;
+    VulnerableBank public immutable bank;
     
     constructor(address _bankAddress) {
         bank = VulnerableBank(_bankAddress);
