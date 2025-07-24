@@ -336,7 +336,11 @@ jobs:
           echo "🔍 Running Slither static analysis..."
           if [ -f "slither.config.json" ]; then
             echo "Using slither.config.json configuration file"
-            slither . --config-file slither.config.json --json reports/slither-report.json || echo "Slither analysis completed with warnings"
+            # Try with config file first, fallback to command line if it fails
+            if ! slither . --config-file slither.config.json --json reports/slither-report.json 2>/dev/null; then
+              echo "⚠️ Config file failed, trying with command line options..."
+              slither . --filter-paths "node_modules,test,tests,mock,mocks,.git" --json reports/slither-report.json || echo "Slither analysis completed with warnings"
+            fi
           else
             echo "Running Slither with default configuration"
             slither . --filter-paths "node_modules,test,tests,mock,mocks,.git" --json reports/slither-report.json || echo "Slither analysis completed with warnings"
