@@ -312,33 +312,71 @@ jobs:
       run: |
         echo "🔍 Running multi-chain security analysis..."
         
+        # Create reports directory if it doesn't exist
+        mkdir -p reports
+        
+        # Discover Solidity contracts in various directory structures
+        echo "🔍 Discovering Solidity contracts..."
+        CONTRACT_DIRS=()
+        
+        # Check common contract directories
+        for dir in "contracts" "src" "contracts/src" "protocol" "core" "smart-contracts"; do
+          if [ -d "$dir" ] && find "$dir" -name "*.sol" -type f | head -1 > /dev/null; then
+            CONTRACT_DIRS+=("$dir")
+            echo "✅ Found Solidity contracts in: $dir"
+          fi
+        done
+        
+        # If no specific directories, check root for .sol files
+        if [ ${#CONTRACT_DIRS[@]} -eq 0 ] && find . -maxdepth 2 -name "*.sol" -type f | head -1 > /dev/null; then
+          CONTRACT_DIRS+=(".")
+          echo "✅ Found Solidity contracts in root directory"
+        fi
+        
         # Ethereum/Solidity Analysis
-        if [ -d "contracts" ] && ls contracts/*.sol 1> /dev/null 2>&1; then
-          echo "📝 Found Solidity contracts, running Ethereum analysis..."
+        if [ ${#CONTRACT_DIRS[@]} -gt 0 ]; then
+          echo "📝 Found Solidity contracts in ${#CONTRACT_DIRS[@]} locations, running Ethereum analysis..."
           
-          # Run Slither with gas optimization analysis
-          slither . --json reports/slither-report.json || echo "Slither analysis completed with warnings"
+          # Run Slither with enhanced configuration and error handling
+          echo "🔍 Running Slither static analysis..."
+          if [ -f "slither.config.json" ]; then
+            echo "Using slither.config.json configuration file"
+            slither . --config-file slither.config.json --json reports/slither-report.json || echo "Slither analysis completed with warnings"
+          else
+            echo "Running Slither with default configuration"
+            slither . --filter-paths "node_modules,test,tests,mock,mocks,.git" --json reports/slither-report.json || echo "Slither analysis completed with warnings"
+          fi
+          
+          # Run Slither gas optimization analysis
           slither . --print human-summary > reports/slither-gas-optimization.txt 2>&1 || echo "Slither gas analysis completed"
           
           # Run Mythril on contracts - Enhanced for real project analysis
-          find contracts -name "*.sol" | head -5 | while read contract; do
-            echo "🧙 Analyzing $contract with Mythril..."
-            timeout 300 myth analyze "$contract" --solv 0.8.19 --json > "reports/mythril-$(basename $contract .sol).json" 2>/dev/null || echo "Mythril analysis completed for $contract"
+          echo "🧙 Running Mythril symbolic execution analysis..."
+          for contract_dir in "${CONTRACT_DIRS[@]}"; do
+            find "$contract_dir" -name "*.sol" | head -5 | while read contract; do
+              echo "🧙 Analyzing $contract with Mythril..."
+              contract_basename=$(basename "$contract" .sol)
+              timeout 300 myth analyze "$contract" --solv 0.8.19 --json > "reports/mythril-$contract_basename.json" 2>/dev/null || echo "Mythril analysis completed for $contract"
+            done
           done
           
           # ENHANCED: Analyze real deployed contracts by address
           if [ ! -z "$TARGET_CONTRACT_ADDRESS" ]; then
             echo "🎯 Analyzing deployed contract at $TARGET_CONTRACT_ADDRESS"
-            timeout 600 myth analyze --rpc https://mainnet.infura.io/v3/YOUR_INFURA_KEY --address "$TARGET_CONTRACT_ADDRESS" --json > "reports/mythril-deployed-contract.json" || echo "Deployed contract analysis completed"
+            timeout 600 myth analyze --rpc https://mainnet.infura.io/v3/b2469e3d2a4f453ba98803ff0a58f2dd --address "$TARGET_CONTRACT_ADDRESS" --json > "reports/mythril-deployed-contract.json" || echo "Deployed contract analysis completed"
           fi
           
           # Run Echidna fuzzing on contracts (if configured)
           echo "🐛 Running Echidna fuzzing analysis..."
-          find contracts -name "*.sol" | head -3 | while read contract; do
-            contract_name=$(basename "$contract" .sol)
-            echo "Fuzzing $contract with Echidna..."
-            timeout 120 docker run --rm -v "$(pwd):/src" trailofbits/echidna:latest /src/"$contract" > "reports/echidna-$contract_name.txt" 2>&1 || echo "Echidna fuzzing completed for $contract"
+          for contract_dir in "${CONTRACT_DIRS[@]}"; do
+            find "$contract_dir" -name "*.sol" | head -3 | while read contract; do
+              contract_name=$(basename "$contract" .sol)
+              echo "Fuzzing $contract with Echidna..."
+              timeout 120 docker run --rm -v "$(pwd):/src" trailofbits/echidna:latest /src/"$contract" > "reports/echidna-$contract_name.txt" 2>&1 || echo "Echidna fuzzing completed for $contract"
+            done
           done
+        else
+          echo "📝 No Solidity contracts found in common directories, skipping Ethereum analysis"
         fi
         
         # Enhanced SAST Analysis with Semgrep

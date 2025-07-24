@@ -55,14 +55,7 @@
     "variable-order",
     "vars-and-auth"
   ],
-  "filter_paths": [
-    "node_modules",
-    "test",
-    "tests", 
-    "mock",
-    "mocks",
-    ".git"
-  ],
+  "filter_paths": "node_modules,test,tests,mock,mocks,.git",
   "compilation_unit_filtering": false,
   "exclude_dependencies": false,
   "exclude_optimization": false,
