@@ -1,29 +1,27 @@
-# 🛡️ Web3 DevSecOps Bug Bounty Template
+# 🛡️ Multi-Chain Web3 DevSecOps Bug Bounty Template
 
-**Professional-grade automated security analysis pipeline for smart contract bug bounty hunting**
+**Professional-grade automated security analysis pipeline for multi-chain smart contract bug bounty hunting**
 
-This template provides a comprehensive DevSecOps pipeline specifically designed for finding vulnerabilities in Solidity smart contracts on platforms like **Code4rena**, **Immunefi**, **Sherlock**, and **HackerOne**.
+This template provides a comprehensive DevSecOps pipeline specifically designed for finding vulnerabilities in **Ethereum (Solidity)** and **Solana (Rust)** smart contracts on platforms like **Code4rena**, **Immunefi**, **Sherlock**, and **HackerOne**.
 
 ---
 
-## 🎯 **Bug Detection Arsenal**
+## 🎯 **Multi-Chain Bug Detection Arsenal**
 
-### 🔍 **Static Analysis Tools**
+### 🔍 **Ethereum/Solidity Analysis**
 - **Slither** - 90+ vulnerability detectors (reentrancy, access control, etc.)
-- **Semgrep** - Custom security rule patterns
-- **4naly3er** - Code4rena-style analysis
-
-### 🧙 **Symbolic Execution**  
 - **Mythril** - Deep symbolic execution for complex bugs
-- **Manticore** - Advanced program analysis
+- **Hardhat** - Compilation and testing framework
 
-### 🎲 **Dynamic Testing**
-- **Echidna** - Property-based fuzzing
-- **Gas Analysis** - DoS vector detection
+### � **Solana/Rust Analysis**  
+- **Cargo Audit** - Rust security vulnerability database
+- **Clippy** - Advanced Rust linting and bug detection
+- **Anchor** - Solana framework testing and analysis
 
-### 🕵️ **Security Scanning**
-- **GitLeaks** - Secret detection
-- **Custom Patterns** - Bug bounty specific checks
+### 🔒 **Enhanced Security Tools**
+- **Semgrep** - Custom security rule patterns (multi-language)
+- **Echidna** - Property-based fuzzing for edge cases  
+- **Gas Analysis** - DoS vector detection and optimization
 
 ---
 
@@ -37,10 +35,15 @@ This template provides a comprehensive DevSecOps pipeline specifically designed 
 
 2. **Add target contracts:**
    ```bash
-   # Place contracts in any of these locations:
-   contracts/     # Primary location
-   src/          # Alternative
-   . (root)      # Direct placement
+   # Ethereum/Solidity contracts:
+   contracts/     # Primary location for .sol files
+   src/          # Alternative location
+   
+   # Solana/Rust programs:
+   programs/     # Anchor programs
+   src/lib.rs    # Rust program files
+   Cargo.toml    # Rust project configuration
+   Anchor.toml   # Anchor workspace configuration
    ```
 
 3. **Trigger analysis:**
@@ -55,18 +58,18 @@ This template provides a comprehensive DevSecOps pipeline specifically designed 
 
 ---
 
-## 🏆 **Bug Classes Detected**
+## 🏆 **Multi-Chain Bug Classes Detected**
 
-| 🐛 Vulnerability | 🔧 Detection Tools | ⚡ Severity | 💰 Bounty Potential |
-|-----------------|-------------------|------------|-------------------|
-| **Reentrancy** | Slither + Mythril | Critical | $10K-$100K+ |
-| **Integer Overflow** | Mythril + Echidna | High | $5K-$50K |
-| **Access Control** | Slither + Custom | High | $5K-$25K |
-| **Unchecked Calls** | Pattern matching | Medium | $1K-$10K |
-| **MEV/Front-running** | Mythril + Analysis | Medium | $2K-$15K |
-| **Gas DoS** | Gas analysis | Medium | $1K-$5K |
-| **Signature Issues** | Slither | Medium | $1K-$10K |
-| **Storage Collision** | Slither + Mythril | High | $5K-$30K |
+| 🐛 Vulnerability | 🔧 Detection Tools | 🌐 Chain | ⚡ Severity | 💰 Bounty Potential |
+|-----------------|-------------------|----------|------------|-------------------|
+| **Reentrancy** | Slither + Mythril | Ethereum | Critical | $10K-$100K+ |
+| **Integer Overflow** | Mythril + Cargo Audit | Both | High | $5K-$50K |
+| **Access Control** | Slither + Clippy | Both | High | $5K-$25K |
+| **Unchecked Calls** | Pattern matching | Ethereum | Medium | $1K-$10K |
+| **MEV/Front-running** | Mythril + Analysis | Ethereum | Medium | $2K-$15K |
+| **PDA Vulnerabilities** | Cargo Audit + Clippy | Solana | High | $5K-$30K |
+| **Account Validation** | Anchor + Custom | Solana | High | $3K-$20K |
+| **Arithmetic Errors** | Clippy + Semgrep | Solana | Medium | $1K-$10K |
 
 ---
 

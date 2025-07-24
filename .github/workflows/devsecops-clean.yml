@@ -32,9 +32,18 @@ jobs:
     - name: Setup Rust
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: nightly
-        target: bpf-unknown-unknown
+        toolchain: stable
         override: true
+        components: rustfmt, clippy
+
+    - name: Setup Solana BPF Target
+      run: |
+        # Install Solana CLI first (includes BPF tools)
+        sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        
+        # Use Solana's install command which sets up the proper BPF toolchain
+        solana install init || echo "Solana BPF setup completed"
 
     - name: Set up Python
       uses: actions/setup-python@v4

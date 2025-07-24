@@ -132,20 +132,12 @@ jobs:
           echo "📦 Installing Solana Rust toolchain with BPF support..."
           solana install init || echo "⚠️  Solana init failed, trying alternative..."
           
-          # Alternative: Add BPF target to nightly toolchain (BPF requires nightly)
-          rustup toolchain install nightly || echo "Nightly toolchain installation failed"
-          rustup target add bpf-unknown-unknown --toolchain nightly 2>/dev/null || echo "🔄 BPF target not available, using Solana toolchain"
-          
-          # Install Solana's custom Rust version if needed
-          sh -c "$(curl -sSfL https://release.solana.com/stable/install)" || echo "⚠️  Solana toolchain installation failed"
+          # Alternative: Try to add BPF as a custom target (doesn't work with standard rustup)
+          echo "🔄 BPF target is managed by Solana toolchain, not standard rustup"
           
         elif [ -x "$HOME/.local/share/solana/install/active_release/bin/solana" ]; then
           echo "📦 Installing Solana Rust toolchain via absolute path..."
           "$HOME/.local/share/solana/install/active_release/bin/solana" install init || echo "⚠️  Solana init failed, but continuing..."
-          
-          # Try to add BPF target to nightly (BPF requires nightly Rust)
-          rustup toolchain install nightly || echo "Nightly toolchain installation failed"
-          rustup target add bpf-unknown-unknown --toolchain nightly 2>/dev/null || echo "🔄 Using Solana's custom toolchain for BPF"
           
         else
           echo "⚠️  Solana CLI not available - installing minimal Rust setup for security tools"
@@ -372,17 +364,20 @@ jobs:
           # Anchor tests (only if Solana toolchain is properly set up)
           if [ -f "Anchor.toml" ]; then
             echo "⚓ Running Anchor tests..."
-            # Check if we can compile for BPF target (check both nightly and any toolchain)
-            if rustup target list --installed | grep -q "bpf-unknown-unknown" || rustup +nightly target list --installed 2>/dev/null | grep -q "bpf-unknown-unknown"; then
-              echo "✅ BPF target available, running full Anchor tests..."
-              # Use nightly if BPF is available there, otherwise use default
-              if rustup +nightly target list --installed 2>/dev/null | grep -q "bpf-unknown-unknown"; then
-                echo "🌙 Using nightly toolchain for BPF compilation..."
-                rustup default nightly || echo "Failed to set nightly as default"
+            # Check if Solana BPF toolchain is available (Solana manages its own BPF compilation)
+            if command -v solana >/dev/null 2>&1 && solana --version >/dev/null 2>&1; then
+              echo "✅ Solana CLI available, checking for BPF compilation capability..."
+              # Test if we can use Solana's BPF compilation
+              if solana config get >/dev/null 2>&1; then
+                echo "🚀 Running full Anchor tests with Solana BPF support..."
+                anchor test > reports/anchor-test.log 2>&1 || echo "Anchor tests completed with warnings"
+              else
+                echo "⚙️  Setting up Solana config first..."
+                solana config set --url localhost >/dev/null 2>&1 || echo "Config setup failed"
+                anchor test > reports/anchor-test.log 2>&1 || echo "Anchor tests completed with warnings"
               fi
-              anchor test > reports/anchor-test.log 2>&1 || echo "Anchor tests completed with warnings"
             else
-              echo "⚠️  BPF target not available, running basic Rust tests..."
+              echo "⚠️  Solana CLI not available, running basic Rust tests..."
               cargo test > reports/rust-test.log 2>&1 || echo "Rust tests completed"
             fi
           else
