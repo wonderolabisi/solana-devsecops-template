@@ -199,8 +199,8 @@ jobs:
         fi
         
         if ! pip show web3 >/dev/null 2>&1; then
-          echo "Installing web3 with exact version..."
-          pip install "web3==6.15.1" "eth-abi==4.2.1" "eth-account==0.11.3" "eth-keys==0.4.0" "eth-typing==3.5.2" || echo "⚠️  Web3 installation failed, continuing..."
+          echo "Installing web3 with Web3 7.x ecosystem..."
+          pip install "web3==7.12.1" "eth-abi>=5.0.1,<6.0.0" "eth-account>=0.13.6,<1.0.0" "eth-keys>=0.4.0,<0.5.0" "eth-typing>=3.5.2,<4.0.0" || echo "⚠️  Web3 installation failed, continuing..."
         fi
           echo "Installing web3 and requests individually..."
           pip install web3 requests || echo "⚠️  Web3/requests installation failed, continuing..."
