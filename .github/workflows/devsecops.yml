@@ -34,6 +34,7 @@ jobs:
       with:
         python-version: '3.11'
         cache: 'pip'
+        cache-dependency-path: 'requirements.txt'
 
     - name: Setup Python Build Environment
       run: |
@@ -157,21 +158,30 @@ jobs:
         # First ensure we have distutils and build tools
         python -m pip install --upgrade pip setuptools wheel
         
-        # Install build dependencies separately to avoid conflicts
-        pip install --upgrade setuptools-scm distlib
+        # Install Python security tools from requirements.txt
+        echo "📦 Installing Python security tools from requirements.txt..."
+        pip install -r requirements.txt || echo "⚠️  Some packages from requirements.txt failed, trying individual installation..."
         
-        # Try to install individual packages with better error handling
-        echo "Installing slither-analyzer..."
-        pip install slither-analyzer || echo "⚠️  Slither installation failed, continuing..."
+        # Fallback: Try to install individual packages if requirements.txt fails
+        if ! pip show slither-analyzer >/dev/null 2>&1; then
+          echo "Installing slither-analyzer individually..."
+          pip install slither-analyzer || echo "⚠️  Slither installation failed, continuing..."
+        fi
         
-        echo "Installing mythril..."
-        pip install mythril || echo "⚠️  Mythril installation failed, continuing..."
+        if ! pip show mythril >/dev/null 2>&1; then
+          echo "Installing mythril individually..."
+          pip install mythril || echo "⚠️  Mythril installation failed, continuing..."
+        fi
         
-        echo "Installing solc-select..."
-        pip install solc-select || echo "⚠️  solc-select installation failed, continuing..."
+        if ! pip show solc-select >/dev/null 2>&1; then
+          echo "Installing solc-select individually..."
+          pip install solc-select || echo "⚠️  solc-select installation failed, continuing..."
+        fi
         
-        echo "Installing web3 and requests..."
-        pip install web3 requests || echo "⚠️  Web3/requests installation failed, continuing..."
+        if ! pip show web3 >/dev/null 2>&1; then
+          echo "Installing web3 and requests individually..."
+          pip install web3 requests || echo "⚠️  Web3/requests installation failed, continuing..."
+        fi
         
         # Install npm dependencies
         echo "📦 Installing npm dependencies..."
