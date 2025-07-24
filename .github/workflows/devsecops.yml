@@ -38,12 +38,19 @@ jobs:
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
         echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        # Verify installation worked
         export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        solana --version
+        echo "Solana CLI installed successfully"
 
     - name: Setup Rust for Solana
       run: |
-        # Ensure Solana CLI is in PATH
+        # Add Solana CLI to PATH (GitHub Actions persistence)
         export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        
+        # Verify Solana CLI is available
+        which solana || (echo "Solana CLI not found, trying alternative path" && export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH")
+        solana --version
         
         # Install standard Rust first
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -76,19 +83,36 @@ jobs:
         solc-select install 0.8.19
         solc-select use 0.8.19
 
+    - name: Setup Environment Paths
+      run: |
+        # Ensure all CLI tools are in PATH for subsequent steps
+        echo "Setting up environment paths..."
+        echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+        
+        # Test immediate availability
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH"
+        which solana || echo "Solana CLI path: $HOME/.local/share/solana/install/active_release/bin"
+        which cargo || echo "Cargo path: $HOME/.cargo/bin"
+
     - name: Verify Installations
       run: |
         echo "🔧 Verifying tool installations..."
         
-        # Ensure Solana CLI is in PATH
-        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        # Add paths to current session
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH"
+        
+        # Debug PATH information
+        echo "Current PATH: $PATH"
+        echo "Checking Solana CLI..."
+        ls -la "$HOME/.local/share/solana/install/active_release/bin/" || echo "Solana bin directory not found"
+        
+        # Check versions with fallback paths
+        "$HOME/.local/share/solana/install/active_release/bin/solana" --version || solana --version || echo "Solana not available"
+        anchor --version || echo "Anchor not available"
         
         # Source cargo environment
-        source ~/.cargo/env
-        
-        # Check versions
-        solana --version || echo "Solana not available"
-        anchor --version || echo "Anchor not available"
+        source ~/.cargo/env || true
         rustc --version || echo "Rust not available"
         cargo --version || echo "Cargo not available"
         
@@ -119,15 +143,13 @@ jobs:
         if [ -f "Anchor.toml" ] || [ -f "Cargo.toml" ]; then
           echo "🦀 Found Rust/Anchor project, running Solana analysis..."
           
-          # Ensure Solana CLI is in PATH
-          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+          # Ensure Solana CLI is in PATH with multiple fallbacks
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$HOME/.cargo/bin:$PATH"
+          source ~/.cargo/env || true
           
-          # Source cargo environment
-          source ~/.cargo/env
-          
-          # Setup Solana config
-          solana config set --url localhost
-          solana-keygen new --no-bip39-passphrase --silent || echo "Key generation completed"
+          # Setup Solana config with full path fallback
+          "$HOME/.local/share/solana/install/active_release/bin/solana" config set --url localhost || solana config set --url localhost
+          "$HOME/.local/share/solana/install/active_release/bin/solana-keygen" new --no-bip39-passphrase --silent || solana-keygen new --no-bip39-passphrase --silent || echo "Key generation completed"
           
           # Rust security audit
           cargo install cargo-audit || echo "Cargo audit already installed"
