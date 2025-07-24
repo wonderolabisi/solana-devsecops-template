@@ -38,9 +38,13 @@ jobs:
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
         echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
 
     - name: Setup Rust for Solana
       run: |
+        # Ensure Solana CLI is in PATH
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
+        
         # Install standard Rust first
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
         source ~/.cargo/env
@@ -75,6 +79,9 @@ jobs:
     - name: Verify Installations
       run: |
         echo "🔧 Verifying tool installations..."
+        
+        # Ensure Solana CLI is in PATH
+        export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
         
         # Source cargo environment
         source ~/.cargo/env
@@ -111,6 +118,9 @@ jobs:
         # Solana/Rust Analysis
         if [ -f "Anchor.toml" ] || [ -f "Cargo.toml" ]; then
           echo "🦀 Found Rust/Anchor project, running Solana analysis..."
+          
+          # Ensure Solana CLI is in PATH
+          export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
           
           # Source cargo environment
           source ~/.cargo/env
