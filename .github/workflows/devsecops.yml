@@ -51,8 +51,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade setuptools wheel build
         
-        # Install distutils explicitly for older packages
+        # Install distutils explicitly for compatibility with older packages
         pip install setuptools-scm setuptools-rust distlib || echo "Build tools partially installed"
+        
+        # For Python 3.12+ compatibility, ensure distutils is available
+        python -c "import distutils" 2>/dev/null || pip install setuptools
         
         echo "✅ Python build environment ready"
 

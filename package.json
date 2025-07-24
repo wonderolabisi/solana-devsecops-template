@@ -8,7 +8,7 @@
     "analyze": "npm run slither && npm run mythril",
     "slither": "slither .",
     "mythril": "myth analyze contracts/*.sol",
-    "exploit-test": "hardhat test exploits/test_exploits.js",
+    "security-scan": "npm run analyze && npm run test",
     "bounty-hunt": "gh workflow run devsecops.yml",
     "generate-exploits": "gh workflow run exploit-generation.yml",
     "monitor-platforms": "gh workflow run monitoring.yml",

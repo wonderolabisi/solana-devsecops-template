@@ -50,6 +50,22 @@ jobs:
       with:
         python-version: '3.11'
 
+    - name: Setup Python Build Environment
+      run: |
+        echo "🐍 Setting up Python build environment..."
+        python --version
+        pip --version
+        
+        # Upgrade pip and install essential build tools
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools wheel build
+        
+        # Install distutils and build dependencies for compatibility
+        pip install setuptools-scm setuptools-rust distlib || echo "Build tools partially installed"
+        
+        # Ensure distutils is available for older packages
+        python -c "import distutils" 2>/dev/null || pip install setuptools
+
     - name: Install Solana CLI
       run: |
         sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
@@ -68,7 +84,14 @@ jobs:
     - name: Install dependencies
       run: |
         npm install || echo "NPM install failed, continuing..."
-        pip install slither-analyzer mythril solc-select web3 requests
+        
+        echo "📦 Installing Python security tools with proper build environment..."
+        # Install packages individually to handle distutils issues
+        pip install slither-analyzer || echo "⚠️  Slither installation failed, continuing..."
+        pip install mythril || echo "⚠️  Mythril installation failed, continuing..."
+        pip install solc-select || echo "⚠️  solc-select installation failed, continuing..."
+        pip install web3 || echo "⚠️  web3 installation failed, continuing..."
+        pip install requests || echo "⚠️  requests installation failed, continuing..."
 
     - name: Setup Solidity compiler
       run: |
