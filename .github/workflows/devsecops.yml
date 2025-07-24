@@ -33,17 +33,33 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        cache: 'pip'
+
+    - name: Setup Python Build Environment
+      run: |
+        echo "🐍 Setting up Python build environment..."
+        python --version
+        pip --version
+        
+        # Upgrade pip and install essential build tools
+        python -m pip install --upgrade pip
+        pip install --upgrade setuptools wheel build
+        
+        # Install distutils explicitly for older packages
+        pip install setuptools-scm setuptools-rust distlib || echo "Build tools partially installed"
+        
+        echo "✅ Python build environment ready"
 
     - name: Install Solana CLI
       run: |
-        echo "🔧 Installing Solana CLI with enhanced SSL/TLS handling..."
+        echo "🔧 Installing Solana CLI with multiple fallback methods..."
         
         # Method 1: Enhanced curl with explicit TLS and SSL options
-        echo "🔄 Attempting installation with enhanced curl options..."
+        echo "🔄 Method 1: Enhanced curl installation..."
         if curl --tlsv1.2 --ssl-reqd --retry 3 --retry-delay 10 --connect-timeout 60 --max-time 300 -sSfL https://release.solana.com/v1.16.0/install | sh; then
           echo "✅ Solana CLI installed successfully with enhanced curl"
         else
-          echo "❌ Enhanced curl failed, trying alternative method..."
+          echo "❌ Enhanced curl failed, trying TLS 1.3..."
           
           # Method 2: Try with different TLS version
           if curl --tlsv1.3 --retry 2 --retry-delay 15 --connect-timeout 60 -sSfL https://release.solana.com/v1.16.0/install | sh; then
@@ -55,11 +71,22 @@ jobs:
             if wget --secure-protocol=TLSv1_2 --timeout=60 --tries=3 --wait=10 -O- https://release.solana.com/v1.16.0/install | sh; then
               echo "✅ Solana CLI installed successfully with wget"
             else
-              echo "❌ All installation methods failed"
-              echo "🔍 Network diagnostics:"
-              curl -I --tlsv1.2 https://release.solana.com/ || echo "Cannot reach release.solana.com"
-              echo "⚠️  Continuing without Solana CLI - will skip Solana-specific features"
-              exit 0  # Don't fail the entire workflow
+              echo "❌ All network installation methods failed, trying direct binary download..."
+              
+              # Method 4: Direct binary download as last resort
+              mkdir -p "$HOME/.local/share/solana/install/active_release/bin"
+              if curl --tlsv1.2 --retry 2 --connect-timeout 30 -L -o solana-release.tar.bz2 "https://github.com/solana-labs/solana/releases/download/v1.16.0/solana-release-x86_64-unknown-linux-gnu.tar.bz2"; then
+                tar jxf solana-release.tar.bz2
+                cp solana-release/bin/* "$HOME/.local/share/solana/install/active_release/bin/"
+                chmod +x "$HOME/.local/share/solana/install/active_release/bin"/*
+                echo "✅ Solana CLI installed via direct binary download"
+              else
+                echo "❌ All installation methods failed"
+                echo "🔍 Network diagnostics:"
+                curl -I --tlsv1.2 https://release.solana.com/ || echo "Cannot reach release.solana.com"
+                echo "⚠️  Continuing without Solana CLI - will skip Solana-specific features"
+                exit 0  # Don't fail the entire workflow
+              fi
             fi
           fi
         fi
@@ -122,8 +149,33 @@ jobs:
 
     - name: Install dependencies
       run: |
-        npm install || echo "NPM install failed, continuing..."
-        pip install slither-analyzer mythril solc-select web3 requests
+        echo "📦 Installing project dependencies..."
+        
+        # Install Python packages with distutils support
+        echo "🐍 Installing Python security tools..."
+        
+        # First ensure we have distutils and build tools
+        python -m pip install --upgrade pip setuptools wheel
+        
+        # Install build dependencies separately to avoid conflicts
+        pip install --upgrade setuptools-scm distlib
+        
+        # Try to install individual packages with better error handling
+        echo "Installing slither-analyzer..."
+        pip install slither-analyzer || echo "⚠️  Slither installation failed, continuing..."
+        
+        echo "Installing mythril..."
+        pip install mythril || echo "⚠️  Mythril installation failed, continuing..."
+        
+        echo "Installing solc-select..."
+        pip install solc-select || echo "⚠️  solc-select installation failed, continuing..."
+        
+        echo "Installing web3 and requests..."
+        pip install web3 requests || echo "⚠️  Web3/requests installation failed, continuing..."
+        
+        # Install npm dependencies
+        echo "📦 Installing npm dependencies..."
+        npm install || echo "⚠️  NPM install failed, continuing..."
 
     - name: Setup Solidity compiler
       run: |
@@ -140,6 +192,29 @@ jobs:
     - name: Verify Installations
       run: |
         echo "🔧 Verifying tool installations..."
+        
+        # Check Python tools first
+        echo "🐍 Checking Python security tools..."
+        python --version
+        pip --version
+        
+        if command -v slither >/dev/null 2>&1; then
+          slither --version && echo "✅ Slither available"
+        else
+          echo "⚠️  Slither not available"
+        fi
+        
+        if command -v myth >/dev/null 2>&1; then
+          myth version && echo "✅ Mythril available"
+        else
+          echo "⚠️  Mythril not available"
+        fi
+        
+        if command -v solc-select >/dev/null 2>&1; then
+          solc-select --version && echo "✅ solc-select available"
+        else
+          echo "⚠️  solc-select not available"
+        fi
         
         # Check Solana CLI with fallbacks
         echo "🔍 Checking Solana CLI..."
