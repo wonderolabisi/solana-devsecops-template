@@ -190,11 +190,11 @@ jobs:
         # First ensure we have distutils and build tools
         python -m pip install --upgrade pip setuptools wheel
         
-        # Install Python security tools from requirements.txt with exact versions
-        echo "📦 Installing Python security tools with locked versions..."
-        pip install -r requirements.txt --no-deps --force-reinstall || echo "⚠️  Requirements.txt installation failed, trying individual packages..."
+        # Install Python security tools from requirements.txt with flexible versions
+        echo "📦 Installing Python security tools from requirements.txt..."
+        pip install -r requirements.txt || echo "⚠️  Requirements.txt installation failed, trying individual packages..."
         
-        # Verify and install individual packages with exact versions if needed
+        # Verify and install individual packages if needed
         if ! pip show slither-analyzer >/dev/null 2>&1; then
           echo "Installing slither-analyzer individually..."
           pip install "slither-analyzer>=0.9.0,<1.0.0" || echo "⚠️  Slither installation failed, continuing..."
@@ -206,8 +206,8 @@ jobs:
         fi
         
         if ! pip show web3 >/dev/null 2>&1; then
-          echo "Installing Web3 7.x ecosystem with compatible versions..."
-          pip install "web3==7.12.1" "eth-abi==5.0.1" "eth-account==0.13.7" "eth-keys==0.4.0" "eth-utils==4.1.1" || echo "⚠️  Web3 installation failed, continuing..."
+          echo "Installing Web3 ecosystem with flexible versioning for dependency resolution..."
+          pip install "web3>=7.0.0,<8.0.0" || echo "⚠️  Web3 installation failed, continuing..."
         fi
         
         # Install npm dependencies
