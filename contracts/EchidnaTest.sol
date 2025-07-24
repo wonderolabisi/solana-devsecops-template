@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+// Import the vulnerable contract FIRST
+import "./VulnerableBank.sol";
+
 /**
  * @title EchidnaProperties - Property-based testing for VulnerableBank
  * @dev Echidna will try to break these invariants
@@ -33,6 +36,3 @@ contract EchidnaProperties {
         return address(bank).balance >= 0;
     }
 }
-
-// Import the vulnerable contract
-import "./VulnerableBank.sol";

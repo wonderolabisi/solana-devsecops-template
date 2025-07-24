@@ -15,17 +15,16 @@ mythril>=0.23.0
 # Solidity compiler management
 solc-select>=1.0.0
 
-# Web3 connectivity and utilities
-web3>=6.0.0
+# Web3 connectivity and utilities - FIXED VERSIONS
+web3==6.20.0
+eth-abi>=5.0.1,<6.0.0
+eth-account>=0.13.6,<0.14.0
+eth-keys>=0.4.0,<0.5.0
+eth-typing>=3.3.0,<4.0.0
 requests>=2.28.0
-
-# Ethereum dependencies (compatible versions)
-eth-abi>=5.0.1
-eth-account>=0.13.6
 
 # Enhanced Security Tools
 semgrep>=1.0.0
-# 4naly3er>=0.1.0  # Package not available on PyPI - using alternative gas analysis
 crytic-compile>=0.3.0
 
 # Additional analysis tools (optional)

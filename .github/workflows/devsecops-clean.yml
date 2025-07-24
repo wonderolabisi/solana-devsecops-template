@@ -26,7 +26,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '16'
         cache: 'npm'
 
     - name: Setup Rust
@@ -39,7 +39,7 @@ jobs:
     - name: Setup Solana BPF Target
       run: |
         # Install Solana CLI first (includes BPF tools)
-        sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
+        sh -c "$(curl -sSfL https://release.solana.com/v1.17.15/install)"
         export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"
         
         # Use Solana's install command which sets up the proper BPF toolchain
@@ -68,7 +68,7 @@ jobs:
 
     - name: Install Solana CLI
       run: |
-        sh -c "$(curl -sSfL https://release.solana.com/v1.16.0/install)"
+        sh -c "$(curl -sSfL https://release.solana.com/v1.17.15/install)"
         echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
 
     - name: Install Anchor CLI
