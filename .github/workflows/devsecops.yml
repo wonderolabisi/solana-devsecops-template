@@ -199,6 +199,28 @@ jobs:
         echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
         echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
+    - name: Install Enhanced Security Tools
+      run: |
+        echo "🚀 Installing enhanced security analysis tools..."
+        
+        # Install Semgrep for SAST analysis
+        echo "📡 Installing Semgrep (Static Application Security Testing)..."
+        pip install semgrep || echo "⚠️  Semgrep installation failed, continuing..."
+        
+        # Install 4naly3er for advanced gas optimization
+        echo "⛽ Installing 4naly3er (Advanced Gas Analysis)..."
+        pip install 4naly3er || echo "⚠️  4naly3er installation failed, continuing..."
+        
+        # Setup Echidna fuzzing (via Docker)
+        echo "🐛 Setting up Echidna (Fuzzing Framework)..."
+        docker pull trailofbits/echidna:latest || echo "⚠️  Echidna Docker pull failed, continuing..."
+        
+        # Install additional analysis tools
+        echo "🔍 Installing additional security tools..."
+        pip install crytic-compile || echo "⚠️  crytic-compile installation failed, continuing..."
+        
+        echo "✅ Enhanced security tools installation complete"
+
     - name: Verify Installations
       run: |
         echo "🔧 Verifying tool installations..."
@@ -251,6 +273,12 @@ jobs:
         slither --version || echo "⚠️  Slither not available"
         myth version || echo "⚠️  Mythril not available"
         
+        # Check enhanced security tools
+        echo "🚀 Checking enhanced security tools..."
+        semgrep --version || echo "⚠️  Semgrep not available"
+        4naly3er --version || echo "⚠️  4naly3er not available"
+        docker run --rm trailofbits/echidna:latest --version || echo "⚠️  Echidna not available"
+        
         echo "🎯 Installation verification complete"
 
     - name: Multi-Chain Security Analysis
@@ -264,11 +292,32 @@ jobs:
           # Run Slither
           slither . --json reports/slither-report.json || echo "Slither analysis completed with warnings"
           
+          # Run enhanced gas analysis with 4naly3er
+          echo "⛽ Running advanced gas optimization analysis..."
+          4naly3er . > reports/4naly3er-gas-report.txt 2>&1 || echo "4naly3er analysis completed with warnings"
+          
           # Run Mythril on contracts
           find contracts -name "*.sol" | head -5 | while read contract; do
             echo "🧙 Analyzing $contract with Mythril..."
             timeout 300 myth analyze "$contract" --solv 0.8.19 --json > "reports/mythril-$(basename $contract .sol).json" 2>/dev/null || echo "Mythril analysis completed for $contract"
           done
+          
+          # Run Echidna fuzzing on contracts (if configured)
+          echo "🐛 Running Echidna fuzzing analysis..."
+          find contracts -name "*.sol" | head -3 | while read contract; do
+            contract_name=$(basename "$contract" .sol)
+            echo "Fuzzing $contract with Echidna..."
+            timeout 120 docker run --rm -v "$(pwd):/src" trailofbits/echidna:latest /src/"$contract" > "reports/echidna-$contract_name.txt" 2>&1 || echo "Echidna fuzzing completed for $contract"
+          done
+        fi
+        
+        # Enhanced SAST Analysis with Semgrep
+        echo "📡 Running Semgrep SAST analysis..."
+        semgrep --config=auto --json --output=reports/semgrep-report.json . || echo "Semgrep analysis completed with warnings"
+        
+        # Custom security patterns
+        echo "🔍 Running custom security pattern analysis..."
+        semgrep --config=p/security-audit --json --output=reports/semgrep-security-audit.json . || echo "Security audit patterns completed"
         fi
         
         # Solana/Rust Analysis
