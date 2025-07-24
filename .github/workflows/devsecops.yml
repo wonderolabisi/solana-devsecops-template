@@ -6,12 +6,7 @@ on:
   pull_request:
     branches: [ main, develop ]
   schedule:
-    - cron: '0 2 * * 1'  # Weekly runs on Monda        # Install Semgrep for SAST analysis
-        echo "📡 Installing Semgrep (Static Analysis Security Tool)..."
-        pip install semgrep || echo "⚠️  Semgrep installation failed, continuing..."
-        
-        # Note: 4naly3er not available on PyPI - using alternative gas analysis via Slither
-        echo "⛽ Note: Using Slither gas optimization analysis instead of 4naly3er"
+    - cron: '0 2 * * 1'  # Weekly runs on Monday
   workflow_dispatch:     # Manual trigger
 
 env:
