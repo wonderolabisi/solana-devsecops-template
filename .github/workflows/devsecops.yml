@@ -320,11 +320,17 @@ jobs:
           slither . --json reports/slither-report.json || echo "Slither analysis completed with warnings"
           slither . --print human-summary > reports/slither-gas-optimization.txt 2>&1 || echo "Slither gas analysis completed"
           
-          # Run Mythril on contracts
+          # Run Mythril on contracts - Enhanced for real project analysis
           find contracts -name "*.sol" | head -5 | while read contract; do
             echo "🧙 Analyzing $contract with Mythril..."
             timeout 300 myth analyze "$contract" --solv 0.8.19 --json > "reports/mythril-$(basename $contract .sol).json" 2>/dev/null || echo "Mythril analysis completed for $contract"
           done
+          
+          # ENHANCED: Analyze real deployed contracts by address
+          if [ ! -z "$TARGET_CONTRACT_ADDRESS" ]; then
+            echo "🎯 Analyzing deployed contract at $TARGET_CONTRACT_ADDRESS"
+            timeout 600 myth analyze --rpc https://mainnet.infura.io/v3/YOUR_INFURA_KEY --address "$TARGET_CONTRACT_ADDRESS" --json > "reports/mythril-deployed-contract.json" || echo "Deployed contract analysis completed"
+          fi
           
           # Run Echidna fuzzing on contracts (if configured)
           echo "🐛 Running Echidna fuzzing analysis..."

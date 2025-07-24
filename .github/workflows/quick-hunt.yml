@@ -1,0 +1,110 @@
+name: 🎯 Quick Bug Bounty Hunter
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Quick target selection'
+        required: true
+        type: choice
+        options:
+          - 'compound-finance/compound-protocol (Up to $1M)'
+          - 'Uniswap/v3-core (Up to $2M)'
+          - 'aave/aave-v3-core (Up to $1M)'
+          - 'pancakeswap/pancake-contracts (Up to $500K)'
+          - 'sushiswap/sushiswap (Up to $300K)'
+          - 'curvefi/curve-contract (Up to $250K)'
+          - 'balancer/balancer-v2-monorepo (Up to $100K)'
+          - 'Custom (enter below)'
+        default: 'compound-finance/compound-protocol (Up to $1M)'
+      custom_repo:
+        description: 'Custom repository (if Custom selected above)'
+        required: false
+        type: string
+      contract_address:
+        description: 'Deployed contract address (optional)'
+        required: false
+        type: string
+
+jobs:
+  quick-hunt:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Parse target selection
+      id: parse_target
+      run: |
+        TARGET="${{ github.event.inputs.target }}"
+        
+        if [[ "$TARGET" == "Custom (enter below)" ]]; then
+          REPO="${{ github.event.inputs.custom_repo }}"
+          PLATFORM="Custom"
+        else
+          # Extract repo from selection
+          case "$TARGET" in
+            "compound-finance/compound-protocol"*) 
+              REPO="compound-finance/compound-protocol"
+              PLATFORM="Immunefi"
+              ;;
+            "Uniswap/v3-core"*)
+              REPO="Uniswap/v3-core" 
+              PLATFORM="Immunefi"
+              ;;
+            "aave/aave-v3-core"*)
+              REPO="aave/aave-v3-core"
+              PLATFORM="Immunefi"
+              ;;
+            "pancakeswap/pancake-contracts"*)
+              REPO="pancakeswap/pancake-contracts"
+              PLATFORM="Immunefi"
+              ;;
+            "sushiswap/sushiswap"*)
+              REPO="sushiswap/sushiswap"
+              PLATFORM="Immunefi"
+              ;;
+            "curvefi/curve-contract"*)
+              REPO="curvefi/curve-contract"
+              PLATFORM="Immunefi"
+              ;;
+            "balancer/balancer-v2-monorepo"*)
+              REPO="balancer/balancer-v2-monorepo"
+              PLATFORM="Immunefi"
+              ;;
+            *)
+              REPO="compound-finance/compound-protocol"
+              PLATFORM="Immunefi"
+              ;;
+          esac
+        fi
+        
+        echo "target_repo=$REPO" >> $GITHUB_OUTPUT
+        echo "bounty_platform=$PLATFORM" >> $GITHUB_OUTPUT
+        echo "🎯 Selected target: $REPO on $PLATFORM"
+
+    - name: Trigger fork and setup workflow
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const response = await github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'fork-and-setup.yml',
+            ref: 'main',
+            inputs: {
+              target_repo: '${{ steps.parse_target.outputs.target_repo }}',
+              contract_address: '${{ github.event.inputs.contract_address }}',
+              bounty_platform: '${{ steps.parse_target.outputs.bounty_platform }}'
+            }
+          });
+          
+          console.log('🚀 Fork and setup workflow triggered!');
+          console.log('📊 Target:', '${{ steps.parse_target.outputs.target_repo }}');
+          console.log('💰 Platform:', '${{ steps.parse_target.outputs.bounty_platform }}');
+          console.log('🔍 Contract:', '${{ github.event.inputs.contract_address }}' || 'Source analysis only');
+
+    - name: Success message
+      run: |
+        echo "🎉 Bug bounty hunting setup initiated!"
+        echo "🎯 Target: ${{ steps.parse_target.outputs.target_repo }}"
+        echo "💰 Platform: ${{ steps.parse_target.outputs.bounty_platform }}"
+        echo "📋 Check the 'Fork & Setup Bug Bounty Target' workflow for progress"
+        echo "🏆 Happy hunting!"
